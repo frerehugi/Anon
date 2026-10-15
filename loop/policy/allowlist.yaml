@@ -1,0 +1,12 @@
+# Endpoints the ops wallet may pay. Everything else is refused by the executor.
+# Only the human edits this file. Verify each entry with `buy quote` before enabling.
+
+buy:
+  - url: https://gateway.usebuy.ai/chainstack/celo
+    purpose: Celo JSON-RPC
+    enabled: false
+  # add SQD / other data endpoints after quoting
+tokens: [USDC, USDT, USAT]
+facilitator:
+  mainnet: https://api.x402.celo.org
+  sepolia: https://api.x402.sepolia.celo.org

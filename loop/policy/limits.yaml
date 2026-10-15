@@ -1,0 +1,31 @@
+# Enforced by executor/, never by prompts. Only the human edits this file.
+# Amounts in USDC-equivalent. PLACEHOLDER values: confirm before first mainnet spend.
+
+budget:
+  total: 100
+  reserve: 40          # untouchable until gate 2
+  experiments: 30      # max per single experiment below
+  growth: 30           # released only after gate 2
+  max_per_experiment: 5
+
+per_call:
+  max_amount: 0.25     # passed as --max-amount to buy
+daily:
+  ops_wallet_max: 3
+  treasury_max: 5
+
+chain:
+  network: celo-mainnet
+  chain_id: 42220
+  attribution_tag: celo_2cc7b29e484b   # ERC-8021, every Celo mainnet tx
+  require_attribution: true
+
+retries:
+  # never auto-retry: payment may already have settled
+  no_retry_on: ["500 provision_failed", "500 settle_uncertain"]
+
+gates:
+  gate_1: "week 2: product live and >=1 independent paying customer"
+  gate_2: "week 6: positive margin and growing revenue"
+kill:
+  no_revenue_days: 14
