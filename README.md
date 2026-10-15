@@ -10,7 +10,32 @@ Every decision is logged in this repo.
 Built for the **Agents on Open Rails** hackathon (Loops House x Celo). Tracks targeted:
 **Build with buy** and **USA₮ with x402**.
 
-> Status: scaffold. No mainnet transaction has been sent yet.
+> Status: core, CLI and paid server implemented and tested read-only against Celo mainnet.
+> No payment has been settled and no transaction has been sent yet.
+
+## What Anon sells
+
+Trust before payment, for both sides of x402 on Celo:
+
+| Endpoint | For | What it returns | Price |
+|---|---|---|---|
+| `GET /v1/check?agentId=<id>` | buyers | verdict ok/caution/avoid for an ERC-8004 agent, with reasons | $0.05 |
+| `GET /v1/lint?url=<https url>&method=GET\|POST` | sellers | findings and fixes for an x402 endpoint, without paying it | $0.03 |
+
+Accepted tokens: USDC, USD₮, USA₮ (EIP-3009) on Celo mainnet via the Celo facilitator.
+Check signals: ERC-8004 identity and registration file, live x402 probe, reputation registry,
+Celo Agent Visa tier (low weight), wallet history. It is a heuristic, not a guarantee.
+
+## Run
+
+```sh
+npm install
+npm test                       # offline unit tests
+npm run cli -- check 9817      # read-only live check on Celo mainnet
+npm run cli -- lint https://example.com/paid
+PAY_TO=0x... X402_API_KEY=... npm start   # paid server; refuses to start without both
+```
+
 
 ## Architecture
 

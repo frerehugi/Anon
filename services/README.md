@@ -15,4 +15,7 @@ protocol snapshots), built on data bought through buy (Chainstack RPC, SQD).
 - Fee: gas at cost + 0.3% of the payment per settlement.
 - Check `GET /supported` before promising USA₮ as a payment token.
 
-Status: not implemented yet.
+Status: implemented in `src/server.ts` (see README). Mainnet settlement not yet exercised.
+
+Paid routes validate input before the payment middleware, so malformed requests get 400 and are never charged.
+Use `DEV_UNPAID=1` only for local testing (binds to 127.0.0.1).
