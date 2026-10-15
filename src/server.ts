@@ -54,7 +54,8 @@ export async function buildApp() {
 
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", false);
+  // On Vercel the TLS proxy sets x-forwarded-proto, so the 402 challenge advertises an https resource URL.
+  app.set("trust proxy", process.env.VERCEL ? 1 : false);
   app.get("/health", (_req, res) => res.json({ status: "ok", mode: devUnpaid ? "dev-unpaid" : "paid" }));
   app.use(validate);
 

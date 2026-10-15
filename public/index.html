@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anon</title>
+<style>
+  :root { --bg:#fff; --fg:#14201a; --muted:#5b6b62; --line:#dfe6e1; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1511; --fg:#e8efe9; --muted:#9bb0a3; --line:#25322a; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,sans-serif; }
+  main { max-width:44rem; margin:0 auto; padding:2.5rem 16px; }
+  h1 { margin:0 0 .25rem; } p.lead { color:var(--muted); margin-top:0; }
+  table { width:100%; border-collapse:collapse; margin:1.5rem 0; }
+  th,td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--line); vertical-align:top; }
+  code { font-family:ui-monospace,monospace; font-size:.9em; overflow-wrap:anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Anon</h1>
+  <p class="lead">Trust before payment, for both sides of x402 on Celo.</p>
+  <table>
+    <tr><th>Endpoint</th><th>For</th><th>Price</th></tr>
+    <tr><td><code>GET /v1/check?agentId=&lt;id&gt;</code><br>Verdict ok / caution / avoid for an ERC-8004 agent, with reasons.</td><td>Buyers</td><td>$0.05</td></tr>
+    <tr><td><code>GET /v1/lint?url=&lt;https url&gt;</code><br>Findings and fixes for an x402 endpoint, checked without paying it.</td><td>Sellers</td><td>$0.03</td></tr>
+  </table>
+  <p>Pay per call with USDC, USD₮ or USA₮ on Celo mainnet via x402. Prices: <code>/v1/pricing</code>. Health: <code>/health</code>.</p>
+  <p>Results are heuristics from public data, not guarantees or financial advice.</p>
+</main>
+</body>
+</html>
