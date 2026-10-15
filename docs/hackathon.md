@@ -27,5 +27,5 @@ Winners announced 2026-11-13.
 | 09.11. | Submission |
 
 ## Open questions
-- Are two projects per person allowed? Ask the organizers before moving money.
-- Does the facilitator settle USA₮ for payers (`GET /supported`)?
+- ~~Are two projects per person allowed?~~ Resolved: the owner confirmed multiple projects are approved (2026-10-15). Keep Anon fully separate from other entries: own Loops account, tag, wallet and ERC-8004 identity.
+- ~~Does the facilitator settle USA₮ for payers?~~ Resolved: yes, `GET /supported` on api.x402.celo.org lists USAT (EIP-3009).
