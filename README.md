@@ -46,6 +46,7 @@ npm run cli -- check 9817      # read-only live check on Celo mainnet
 npm run cli -- lint https://example.com/paid
 npm run cli -- metrics rows.json --celo-usd 0.086   # market metrics from settlement rows
 npm run cli -- deals --live                          # rank group-buy candidates from the live catalog
+npm run cli -- executor check examples/payment-request.json   # payment policy check (dry run only, no signer yet)
 npm run cli -- index run --db anon-index.sqlite      # index settlements from SQD into a local SQLite file
 npm run cli -- index report --db anon-index.sqlite --days 1
 npm run cli -- directory crawl --db anon-index.sqlite   # ERC-8004 registry scan, registration files, x402 probes
@@ -57,7 +58,7 @@ PAY_TO=0x... X402_API_KEY=... npm start   # paid server; refuses to start withou
 
 ```
 services/   x402 endpoints Anon sells (payTo = revenue wallet)
-executor/   deterministic payment executor: enforces loop/policy, adds attribution tag
+executor/   deterministic payment executor (policy engine built, signer pending); code in src/executor
 loop/       the agent team: roles, policy, memos, decisions, ledger, audits
 agent/      ERC-8004 agent card and registration
 docs/       hackathon notes, risks

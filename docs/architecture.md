@@ -70,7 +70,8 @@ The executor is the only component that signs. Bots read and write data and memo
 | Deal simulator (`src/deals`) | built, unit-tested, runs on the live catalog |
 | Indexer (D1/SQLite adapters, cycle, cron Worker entry, SQL dump) | built, tested, run live against SQD; not deployed yet |
 | Directory crawler and query endpoint | built, tested locally on the real registry; Worker deploy pending (`docs/crawler.md`) |
-| Executor, deal engine, dashboard | not built |
+| Executor policy engine, ledger, dry run | built and tested; signer not wired |
+| Deal engine, dashboard | not built |
 
 ## Publication rule
 

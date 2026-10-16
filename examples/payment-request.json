@@ -1,0 +1,1 @@
+{ "id": "demo-1", "wallet": "ops", "url": "https://gateway.usebuy.ai/chainstack/celo", "token": "USDC", "amount": "0.01", "experiment": "demo", "approvalId": "demo-approval" }
