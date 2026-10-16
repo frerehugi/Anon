@@ -26,6 +26,17 @@ Accepted tokens: USDC, USD₮, USA₮ (EIP-3009) on Celo mainnet via the Celo fa
 Check signals: ERC-8004 identity and registration file, live x402 probe, reputation registry,
 Celo Agent Visa tier (low weight), wallet history. It is a heuristic, not a guarantee.
 
+## The Index and Anon Deals
+
+Anon is built around one data core, the **Index**, with two views and one connected sub-project:
+
+- **Metrics** (`docs/metrics.md`, `src/metrics`): versioned definitions of volume, sellers, payers, concentration,
+  gas cost and a payment-circuit indicator, each labelled measured, estimated or unavailable.
+- **Directory** (`docs/directory.md`): Celo agents and x402 services with probes, reputation and trust evidence.
+- **Anon Deals** (`docs/deals.md`, `src/deals`): group buying for agents on catalog products that get cheaper in bundles.
+
+Overview and status: `docs/architecture.md`.
+
 ## Run
 
 ```sh
@@ -33,6 +44,8 @@ npm install
 npm test                       # offline unit tests
 npm run cli -- check 9817      # read-only live check on Celo mainnet
 npm run cli -- lint https://example.com/paid
+npm run cli -- metrics rows.json --celo-usd 0.086   # market metrics from settlement rows
+npm run cli -- deals --live                          # rank group-buy candidates from the live catalog
 PAY_TO=0x... X402_API_KEY=... npm start   # paid server; refuses to start without both
 ```
 
