@@ -6,6 +6,10 @@ import { runCycle } from "../src/indexer/cycle.js";
 import { SqdSource } from "../src/indexer/sqd.js";
 import { buildReport, status } from "../src/indexer/report.js";
 import { parseConfig, type IndexerEnv } from "../src/indexer/config.js";
+import { runDirectoryCycle } from "../src/directory/crawler.js";
+import { SqdRegistrySource } from "../src/directory/registrySource.js";
+import { directoryStats, getAgent, listAgents } from "../src/directory/queries.js";
+import { edgeFetcher } from "../src/net.js";
 
 interface Env extends IndexerEnv {
   DB: D1DatabaseLike;
@@ -22,13 +26,33 @@ function safeEqual(a: string, b: string): boolean {
   return d === 0;
 }
 
+/** Must match the second cron in wrangler.toml. */
+export const DIRECTORY_CRON = "2-59/10 * * * *";
+
+function authorized(req: Request, env: Env): Response | null {
+  if (!env.READ_TOKEN) return json({ error: "not configured" }, 503); // fail closed
+  const auth = req.headers.get("authorization") ?? "";
+  return safeEqual(auth, `Bearer ${env.READ_TOKEN}`) ? null : json({ error: "unauthorized" }, 401);
+}
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
 export default {
-  async scheduled(_event: unknown, env: Env, ctx: MinimalExecutionContext): Promise<void> {
+  async scheduled(event: { cron?: string }, env: Env, ctx: MinimalExecutionContext): Promise<void> {
     const cfg = parseConfig(env);
     const db = new D1Db(env.DB);
+    if (event.cron === DIRECTORY_CRON) {
+      // Free plan: 50 queries and 50 subrequests per invocation. Registry scan, registration files and probes share that budget.
+      ctx.waitUntil(
+        runDirectoryCycle(db, { registry: new SqdRegistrySource(cfg.sqdBase), fetcher: edgeFetcher }, {
+          maxWindows: 3, maxRequests: 6, maxRetries: 1, backoffMs: 500, maxStatements: 25, windowBlocks: cfg.windowBlocks, maxFetches: 6, maxProbes: 6, concurrency: 3,
+        })
+          .then((r) => console.info(`directory: +${r.registry.events} events, files ${r.pending.ok}/${r.pending.attempted}, probes ${r.probes.pass}/${r.probes.probed}, caughtUp=${r.registry.caughtUp}`))
+          .catch((e) => console.error("directory error:", e)),
+      );
+      return;
+    }
     ctx.waitUntil(
       runCycle(db, new SqdSource(cfg.sqdBase), {
         signers: cfg.signers, maxStatements: cfg.maxStatements, maxWindows: cfg.maxWindows, maxRequests: 40, maxRetries: 2, backoffMs: 500,
@@ -44,7 +68,24 @@ export default {
     const db = new D1Db(env.DB);
     if (req.method !== "GET") return json({ error: "method not allowed" }, 405);
 
-    if (url.pathname === "/health") return json(await status(db));
+    if (url.pathname === "/health") return json({ ...(await status(db)), directory: await directoryStats(db) });
+
+    if (url.pathname === "/v1/agents" || url.pathname.startsWith("/v1/agents/")) {
+      const denied = authorized(req, env);
+      if (denied) return denied;
+      const idPart = url.pathname.slice("/v1/agents/".length);
+      if (url.pathname !== "/v1/agents") {
+        if (!/^\d{1,12}$/.test(idPart)) return json({ error: "bad agent id" }, 400);
+        const a = await getAgent(db, Number(idPart));
+        return a ? json(a) : json({ error: "not found" }, 404);
+      }
+      const q = url.searchParams;
+      const num = (k: string) => (q.has(k) && Number.isFinite(Number(q.get(k))) ? Number(q.get(k)) : undefined);
+      return json(await listAgents(db, {
+        x402: q.get("x402") === "1", live: q.get("live") === "1", tag: q.get("tag")?.slice(0, 40) || undefined, q: q.get("q")?.slice(0, 80) || undefined,
+        owner: /^0x[0-9a-fA-F]{40}$/.test(q.get("owner") ?? "") ? q.get("owner")! : undefined, order: q.get("order") === "id" ? "id" : "recent", limit: num("limit"), offset: num("offset"),
+      }));
+    }
 
     if (url.pathname === "/v1/report") {
       if (!env.READ_TOKEN) return json({ error: "not configured" }, 503); // fail closed

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { SqliteDb } from "../src/indexer/sqliteDb.js";
 import { D1Db, type D1DatabaseLike, type D1PreparedStatementLike } from "../src/indexer/db.js";
 import { parseStreamLines } from "../src/indexer/parse.js";
@@ -166,7 +166,7 @@ test("report from the database equals the metrics computed on the same rows, wit
 /** A D1 stand-in backed by node:sqlite, to prove the D1 adapter and the cycle work through the D1 interface. */
 class FakeD1 implements D1DatabaseLike {
   raw = new DatabaseSync(":memory:");
-  constructor() { this.raw.exec(readFileSync("migrations/0001_init.sql", "utf8")); }
+  constructor() { for (const f of readdirSync("migrations").filter((n) => n.endsWith(".sql")).sort()) this.raw.exec(readFileSync(`migrations/${f}`, "utf8")); }
   prepare(sql: string): D1PreparedStatementLike {
     const raw = this.raw;
     let params: unknown[] = [];
@@ -236,4 +236,12 @@ test("dump round trip: the exported SQL rebuilds the same rows and cursor, and i
   const a = await src.all<any>("SELECT * FROM settlements ORDER BY tx_hash");
   const b = await dst.all<any>("SELECT * FROM settlements ORDER BY tx_hash");
   assert.deepEqual(b, a);
+});
+
+test("SqliteDb.migrate is idempotent: running it twice does not fail on the ALTER TABLE migration", () => {
+  const db = new SqliteDb(":memory:");
+  db.migrate();
+  db.migrate();
+  const cols = (db.raw.prepare("PRAGMA table_info(runs)").all() as { name: string }[]).map((c) => c.name);
+  assert.ok(cols.includes("source"));
 });

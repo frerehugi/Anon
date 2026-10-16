@@ -3,6 +3,30 @@ import { RetryableSourceError, type Source, type WindowResult } from "./types.js
 
 export const SQD_CELO = "https://gateway.usebuy.ai/sqd/datasets/celo-mainnet";
 
+/** One POST to the SQD finalized stream; maps overload and network problems to RetryableSourceError. */
+export async function sqdPost(fetchImpl: typeof fetch, base: string, body: unknown): Promise<any[]> {
+  let res: Response;
+  try {
+    res = await fetchImpl(`${base}/finalized-stream`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(60_000),
+    });
+  } catch (e) {
+    throw new RetryableSourceError(`network: ${(e as Error).message}`, true);
+  }
+  if (res.status === 429 || res.status >= 500) throw new RetryableSourceError(`HTTP ${res.status}`, res.status >= 500 && res.status !== 529);
+  if (!res.ok) throw new Error(`SQD HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const text = await res.text();
+  return text.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
+}
+
+export async function sqdFinalizedHead(fetchImpl: typeof fetch, base: string): Promise<number> {
+  const res = await fetchImpl(`${base}/finalized-head`, { signal: AbortSignal.timeout(20_000) });
+  if (!res.ok) throw new RetryableSourceError(`finalized-head HTTP ${res.status}`, res.status >= 500 && res.status !== 529);
+  const j: any = await res.json();
+  if (typeof j?.number !== "number") throw new Error("finalized-head: unexpected response");
+  return j.number;
+}
+
 /** SQD portal source (free, per-IP rate limit). Returns what the portal covered; the caller continues from lastBlock + 1. */
 export class SqdSource implements Source {
   constructor(

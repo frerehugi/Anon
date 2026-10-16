@@ -11,9 +11,14 @@ export class SqliteDb implements Db {
     this.raw = new DatabaseSync(path);
   }
 
+  /** Applies each migration file once (tracked in _migrations), like wrangler does for D1. */
   migrate(dir = "migrations"): void {
+    this.raw.exec("CREATE TABLE IF NOT EXISTS _migrations (name TEXT PRIMARY KEY)");
+    const done = new Set((this.raw.prepare("SELECT name FROM _migrations").all() as { name: string }[]).map((r) => r.name));
     for (const f of readdirSync(dir).filter((n) => n.endsWith(".sql")).sort()) {
+      if (done.has(f)) continue;
       this.raw.exec(readFileSync(join(dir, f), "utf8"));
+      this.raw.prepare("INSERT INTO _migrations (name) VALUES (?)").run(f);
     }
   }
 

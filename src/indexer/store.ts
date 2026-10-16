@@ -38,17 +38,6 @@ export async function getCursor(db: Db, source: string): Promise<number | null> 
   return r.length ? r[0].last_block : null;
 }
 
-export async function startRun(db: Db, now: number): Promise<void> {
-  await db.batch([{ sql: "INSERT INTO runs (started_at, status) VALUES (?, 'running')", params: [now] }]);
-}
-
-export async function finishRun(db: Db, r: { now: number; fromBlock: number | null; toBlock: number | null; windows: number; settlements: number; unclassified: number; status: string; error?: string }): Promise<void> {
-  await db.batch([{
-    sql: "UPDATE runs SET finished_at=?, from_block=?, to_block=?, windows=?, settlements=?, unclassified=?, status=?, error=? WHERE id = (SELECT MAX(id) FROM runs)",
-    params: [r.now, r.fromBlock, r.toBlock, r.windows, r.settlements, r.unclassified, r.status, r.error ?? null],
-  }]);
-}
-
 export interface SettlementDbRow {
   tx_hash: string; log_index: number; block: number; ts: number; token: string; payer: string; pay_to: string;
   amount_atomic: string; usd: number; relayer: string; gas_used: number | null; gas_price_wei: number | null;

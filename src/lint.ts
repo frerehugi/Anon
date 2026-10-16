@@ -1,6 +1,6 @@
 import { getAddress, isAddress } from "viem";
 import { ASSETS, CELO_NETWORK, assetInfo } from "./constants.js";
-import { safeFetch, UnsafeUrlError } from "./safeFetch.js";
+import { UnsafeUrlError, type Fetcher } from "./net.js";
 
 export type Severity = "error" | "warn" | "info";
 
@@ -218,13 +218,13 @@ function summarize(findings: Finding[]): LintResult["summary"] {
 /** Probe an x402 endpoint WITHOUT paying: one unpaid request, then rule checks. */
 export async function lintEndpoint(
   url: string,
-  opts: { method?: "GET" | "POST"; body?: string } = {},
+  opts: { method?: "GET" | "POST"; body?: string; fetcher: Fetcher },
 ): Promise<LintResult> {
   const method = opts.method ?? "GET";
   const base: { url: string; method: string } = { url, method };
   try {
     const send = (m: "GET" | "POST") =>
-      safeFetch(url, {
+      opts.fetcher(url, {
         method: m,
         body: m === "POST" ? (opts.body ?? "{}") : undefined,
         headers: m === "POST" ? { "content-type": "application/json" } : undefined,

@@ -43,3 +43,16 @@ npx wrangler d1 create anon-index
 - `/health` shows `lastRun.status = error`: read `lastRun.error`. `HTTP 529` is the free SQD service being busy; the next cron run continues.
 - The cursor does not move: check `SIGNERS` and that the D1 binding is named `DB`.
 - Report empty: no settlements in the window yet, or the dump was not imported and the first runs are still catching up.
+
+## Directory crawler (second cron)
+
+`wrangler.toml` has two crons: the settlement indexer (`*/5`) and the directory crawler (`2-59/10`). Migration `0002_directory.sql` is applied with the others.
+Optional backfill so the Worker does not scan 20,000 historic events:
+
+```sh
+npm run cli -- directory crawl --db anon-index.sqlite
+npm run cli -- directory dump --db anon-index.sqlite --out anon-directory-dump.sql   # about 10 MB
+npx wrangler d1 execute anon-index --remote --file anon-directory-dump.sql
+```
+
+Import before the first directory cron run. Read API: `GET /v1/agents`, `/v1/agents/:id` with `Authorization: Bearer <READ_TOKEN>`. Details: `docs/crawler.md`.

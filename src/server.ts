@@ -7,6 +7,7 @@ import { bazaarResourceServerExtension, declareDiscoveryExtension } from "@x402/
 import { ASSETS, CELO_NETWORK } from "./constants.js";
 import { checkAgent } from "./check.js";
 import { lintEndpoint } from "./lint.js";
+import { nodeFetcher } from "./safeFetch.js";
 
 const PRICES_USD = { check: 0.05, lint: 0.03 } as const;
 
@@ -119,7 +120,7 @@ export async function buildApp() {
   });
   app.get("/v1/lint", async (req, res) => {
     const method = req.query.method === "POST" ? "POST" : "GET";
-    res.json(await lintEndpoint(String(req.query.url), { method }));
+    res.json(await lintEndpoint(String(req.query.url), { method, fetcher: nodeFetcher }));
   });
   app.get("/v1/pricing", (_req, res) =>
     res.json({ network: CELO_NETWORK, currency: "USD", tokens: STABLES.map(([, i]) => i.symbol), prices: PRICES_USD }),

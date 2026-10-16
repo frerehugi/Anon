@@ -30,3 +30,6 @@ export function assetInfo(address: string): AssetInfo | undefined {
 }
 
 export const VISA_API = "https://agent-api.self.xyz";
+
+/** Block of the first mint in the ERC-8004 Identity Registry on Celo (Blockscout, token 1): 2026-02-06. */
+export const REGISTRY_FIRST_BLOCK = 58_476_306;

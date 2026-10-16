@@ -10,3 +10,4 @@ dist/
 *.sqlite-journal
 anon-index-dump.sql
 .wrangler/
+anon-directory-dump.sql

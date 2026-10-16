@@ -1,17 +1,10 @@
 import { IDENTITY_REGISTRY, CELO_CHAIN_ID } from "./constants.js";
 import { identityAbi, publicClient } from "./chain.js";
-import { safeFetch } from "./safeFetch.js";
+import { nodeFetcher } from "./safeFetch.js";
+import { decodeDataUri, MAX_URI_CHARS, type RegistrationFile } from "./registration.js";
 
-export interface RegistrationFile {
-  type?: string;
-  name?: string;
-  description?: string;
-  services?: { name?: string; endpoint?: string; version?: string }[];
-  x402Support?: boolean;
-  active?: boolean;
-  supportedTrust?: string[];
-  registrations?: { agentId?: number | string; agentRegistry?: string }[];
-}
+export type { RegistrationFile } from "./registration.js";
+export { registrationCoherent } from "./registration.js";
 
 export interface IdentityResult {
   exists: boolean;
@@ -22,24 +15,20 @@ export interface IdentityResult {
   registrationError?: string;
 }
 
-const MAX_URI = 200_000;
 
 async function loadRegistration(uri: string): Promise<{ kind: IdentityResult["uriKind"]; file?: RegistrationFile; error?: string }> {
   try {
-    if (uri.length > MAX_URI) return { kind: "other", error: "registration URI too large" };
+    if (uri.length > MAX_URI_CHARS) return { kind: "other", error: "registration URI too large" };
     if (uri.startsWith("data:")) {
       const comma = uri.indexOf(",");
-      const meta = uri.slice(5, comma);
-      const payload = uri.slice(comma + 1);
-      const text = meta.includes(";base64")
-        ? Buffer.from(payload, "base64").toString("utf8")
-        : decodeURIComponent(payload);
+      const text = decodeDataUri(uri);
+      if (text === null) return { kind: "data", error: "undecodable data URI" };
       return { kind: "data", file: JSON.parse(text) };
     }
     if (uri.startsWith("https://") || uri.startsWith("ipfs://")) {
       const kind = uri.startsWith("ipfs://") ? "ipfs" : "https";
       const url = kind === "ipfs" ? `https://ipfs.io/ipfs/${uri.slice(7)}` : uri;
-      const res = await safeFetch(url, { timeoutMs: 8000 });
+      const res = await nodeFetcher(url, { timeoutMs: 8000 });
       if (res.status !== 200) return { kind, error: `registration file returned HTTP ${res.status}` };
       return { kind, file: JSON.parse(res.body) };
     }
@@ -69,12 +58,4 @@ export async function readIdentity(agentId: bigint): Promise<IdentityResult> {
     registration: loaded.file,
     registrationError: loaded.error,
   };
-}
-
-/** Does the registration file point back at this agent id and registry on Celo? */
-export function registrationCoherent(reg: RegistrationFile | undefined, agentId: bigint): boolean {
-  const want = `eip155:${CELO_CHAIN_ID}:${IDENTITY_REGISTRY}`.toLowerCase();
-  return !!reg?.registrations?.some(
-    (r) => String(r.agentId) === agentId.toString() && String(r.agentRegistry ?? "").toLowerCase() === want,
-  );
 }

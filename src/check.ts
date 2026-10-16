@@ -3,6 +3,7 @@ import { publicClient, reputationAbi } from "./chain.js";
 import { readIdentity, registrationCoherent, type IdentityResult } from "./identity.js";
 import { readVisa, type VisaStatus } from "./visa.js";
 import { lintEndpoint, type LintResult } from "./lint.js";
+import { nodeFetcher } from "./safeFetch.js";
 
 export type Verdict = "ok" | "caution" | "avoid";
 
@@ -74,7 +75,7 @@ export async function checkAgent(agentId: bigint): Promise<CheckResult> {
     readReputation(agentId),
     readVisa(agentId),
     identity.wallet ? publicClient.getTransactionCount({ address: identity.wallet as `0x${string}` }).catch(() => undefined) : Promise.resolve(undefined),
-    Promise.all(endpoints.map((u) => lintEndpoint(u))),
+    Promise.all(endpoints.map((u) => lintEndpoint(u, { fetcher: nodeFetcher }))),
   ]);
 
   let score = 30; // identity exists

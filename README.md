@@ -32,7 +32,7 @@ Anon is built around one data core, the **Index**, with two views and one connec
 
 - **Metrics** (`docs/metrics.md`, `src/metrics`): versioned definitions of volume, sellers, payers, concentration,
   gas cost and a payment-circuit indicator, each labelled measured, estimated or unavailable.
-- **Directory** (`docs/directory.md`): Celo agents and x402 services with probes, reputation and trust evidence.
+- **Directory** (`docs/directory.md`, crawler: `docs/crawler.md`): Celo agents and x402 services with probes, reputation and trust evidence.
 - **Anon Deals** (`docs/deals.md`, `src/deals`): group buying for agents on catalog products that get cheaper in bundles.
 
 Overview and status: `docs/architecture.md`. Indexer: `docs/indexer.md`, deployment: `docs/deploy-cloudflare.md`.
@@ -48,6 +48,7 @@ npm run cli -- metrics rows.json --celo-usd 0.086   # market metrics from settle
 npm run cli -- deals --live                          # rank group-buy candidates from the live catalog
 npm run cli -- index run --db anon-index.sqlite      # index settlements from SQD into a local SQLite file
 npm run cli -- index report --db anon-index.sqlite --days 1
+npm run cli -- directory crawl --db anon-index.sqlite   # ERC-8004 registry scan, registration files, x402 probes
 PAY_TO=0x... X402_API_KEY=... npm start   # paid server; refuses to start without both
 ```
 
