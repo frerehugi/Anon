@@ -17,11 +17,14 @@ async function main() {
     // rows.json: [{ts,token,payer,payTo,usd,relayer?,gasUsed?,gasPriceWei?}, ...]
     const celoUsd = rest.includes("--celo-usd") ? Number(rest[rest.indexOf("--celo-usd") + 1]) : undefined;
     console.log(JSON.stringify(computeMetrics(JSON.parse(readFileSync(arg, "utf8")), { celoUsd }), replacer, 2));
+  } else if (cmd === "index") {
+    const { indexCommand } = await import("./indexerCli.js");
+    console.log(JSON.stringify(await indexCommand(arg, rest), replacer, 2));
   } else if (cmd === "deals") {
     const caps = arg && arg !== "--live" ? JSON.parse(readFileSync(arg, "utf8")).capabilities : await fetchCatalog();
     console.log(JSON.stringify(simulateDeals(caps), replacer, 2));
   } else {
-    console.error("usage: cli check <agentId> | lint <https-url> [--post] | metrics <rows.json> [--celo-usd N] | deals [--live|catalog.json]");
+    console.error("usage: cli check <agentId> | lint <https-url> [--post] | metrics <rows.json> [--celo-usd N] | deals [--live|catalog.json] | index run|report|status|dump --db <file>");
     process.exit(2);
   }
 }

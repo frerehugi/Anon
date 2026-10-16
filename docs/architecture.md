@@ -34,8 +34,8 @@ Permit2). They are counted as "unclassified" until analysed, not silently droppe
 ## Store and compute
 
 - Daily aggregates and per-seller rows are enough for the views; raw settlements can be rebuilt from chain data.
-- Target storage: Cloudflare D1 or KV written by a cron Worker (same pattern as the OSIRIS keeper), read by the
-  Vercel endpoints with a read-only token. Not implemented yet.
+- Storage: Cloudflare D1 written by a cron Worker (same pattern as the OSIRIS keeper); KV only as an optional cache for
+  finished reports. Details in `docs/indexer.md`; deployment in `docs/deploy-cloudflare.md`.
 - All numbers come from pure functions (`src/metrics/compute.ts`) so they are unit-tested and reproducible.
 
 ## Views
@@ -68,7 +68,7 @@ The executor is the only component that signs. Bots read and write data and memo
 | Check, Lint, paid server, Vercel entry | built and tested read-only |
 | Metrics engine (`src/metrics`) | built, unit-tested, reproduces a 4-day real dataset |
 | Deal simulator (`src/deals`) | built, unit-tested, runs on the live catalog |
-| Indexer with storage, cron Worker | not built |
+| Indexer (D1/SQLite adapters, cycle, cron Worker entry, SQL dump) | built, tested, run live against SQD; not deployed yet |
 | Directory crawler and query endpoint | not built |
 | Executor, deal engine, dashboard | not built |
 

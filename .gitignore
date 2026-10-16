@@ -6,3 +6,7 @@ dist/
 *.key
 *.pem
 .DS_Store
+*.sqlite
+*.sqlite-journal
+anon-index-dump.sql
+.wrangler/

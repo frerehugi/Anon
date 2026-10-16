@@ -1,0 +1,27 @@
+# Anon indexer Worker (separate from the OSIRIS keeper: own Worker, own D1 database, no shared keys).
+name = "anon-indexer"
+main = "worker/index.ts"
+compatibility_date = "2026-01-01"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "anon-index"
+database_id = "REPLACE_WITH_D1_DATABASE_ID" # output of: npx wrangler d1 create anon-index
+migrations_dir = "migrations"
+
+[vars]
+# Celo facilitator signer (api.x402.celo.org/supported) and the third-party x402Go signer (share tracking).
+SIGNERS = "0x0d74d5cefd2e7f24e623330ebe3d8d4cb45ffb48,0x402001b3fbf1462939657eb7f64ee3743eadf35e"
+# Public payTo of the buy gateway (gateway.usebuy.ai/v1/catalog -> payment.payTo), used for the per-shop slice.
+LABELS = '{"0x20faaca5f980e29639a0fcc6dca6988e18ed333b":"buy gateway"}'
+# Conservative defaults for the Workers Free plan (10 ms CPU per cron run, 50 subrequests, 50 D1 queries).
+# On Workers Paid (30 s CPU) raise to e.g. MAX_STATEMENTS=900, MAX_WINDOWS=20, WINDOW_BLOCKS=2500.
+# Backfill history locally (npm run cli -- index run / index dump) instead of through the Worker.
+MAX_STATEMENTS = "40"
+MAX_WINDOWS = "2"
+WINDOW_BLOCKS = "500"
+BACKFILL_DAYS = "1"
+# READ_TOKEN is a secret: npx wrangler secret put READ_TOKEN
