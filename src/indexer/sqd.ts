@@ -31,7 +31,8 @@ export async function sqdFinalizedHead(fetchImpl: typeof fetch, base: string): P
 export class SqdSource implements Source {
   constructor(
     private readonly base: string = SQD_CELO,
-    private readonly fetchImpl: typeof fetch = fetch,
+    // Wrapped on purpose: the global fetch of Workers throws "Illegal invocation" when it is called as a method of another object.
+    private readonly fetchImpl: typeof fetch = (input, init) => fetch(input, init),
     private readonly pauseMs = 0,
   ) {}
 

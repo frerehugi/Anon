@@ -257,3 +257,20 @@ test("a failing head request is retried and, if it keeps failing, recorded as an
   assert.match(runs[0].error, /529/);
   db.close();
 });
+
+test("default fetch is never called as a method (Workers: Illegal invocation)", async () => {
+  const real = globalThis.fetch;
+  const strict = function (this: unknown, _input: unknown): Promise<Response> {
+    if (this !== undefined && this !== globalThis) return Promise.reject(new TypeError("Illegal invocation: function called with incorrect `this` reference"));
+    return Promise.resolve(new Response(JSON.stringify({ number: 123 })));
+  };
+  globalThis.fetch = strict as unknown as typeof fetch;
+  try {
+    const { SqdSource } = await import("../src/indexer/sqd.js");
+    const { SqdRegistrySource } = await import("../src/directory/registrySource.js");
+    assert.equal(await new SqdSource().finalizedHead(), 123);
+    assert.equal(await new SqdRegistrySource().finalizedHead(), 123);
+  } finally {
+    globalThis.fetch = real;
+  }
+});

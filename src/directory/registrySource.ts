@@ -11,7 +11,7 @@ export interface RegistrySource {
 
 /** ERC-8004 Identity Registry events (Registered, URIUpdated) from the SQD portal. */
 export class SqdRegistrySource implements RegistrySource {
-  constructor(private readonly base: string = SQD_CELO, private readonly fetchImpl: typeof fetch = fetch, private readonly pauseMs = 0) {}
+  constructor(private readonly base: string = SQD_CELO, private readonly fetchImpl: typeof fetch = (input, init) => fetch(input, init), private readonly pauseMs = 0) {}
 
   finalizedHead() { return sqdFinalizedHead(this.fetchImpl, this.base); }
 
