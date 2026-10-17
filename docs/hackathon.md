@@ -12,6 +12,7 @@ Winners announced 2026-11-13.
 - Code written during the hackathon. Anything reused must be disclosed.
 - Relayer-paid gas does not count as our contribution; describe it.
 - Required field `agent-wallet`: the public address Anon sends from.
+  Anon agent wallet (public, EOA, Celo mainnet): `0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea`. Checked 2026-10-17: valid checksum, no code, nonce 0, balance 0.
 
 ## Tracks
 - **Build with buy**: verified paid calls from the tagged wallet, named user, demand created for consumed services.
