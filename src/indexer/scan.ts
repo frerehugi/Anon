@@ -68,16 +68,26 @@ export async function runScan<R>(db: Db, ops: ScanOps<R>, opts: ScanOpts): Promi
   let win = opts.windowBlocks ?? 2500;
   let budget = (opts.maxStatements ?? 40) - RESERVED;
 
-  const head = await ops.head();
-  let cursor = await getCursor(db, opts.source);
-  if (cursor === null) cursor = opts.startBlock !== undefined ? opts.startBlock - 1 : head - (opts.backfillBlocks ?? 86400) - 1;
-  const startCursor = cursor;
-
-  const sum: ScanSummary = { fromBlock: null, toBlock: null, head, windows: 0, statements: 0, caughtUp: false, retries: 0 };
+  // The run row comes first, so a failure while asking for the head or the cursor is visible in /health too.
+  const sum: ScanSummary = { fromBlock: null, toBlock: null, head: 0, windows: 0, statements: 0, caughtUp: false, retries: 0 };
   const runId = await startRun(db, now(), opts.source);
   let error: string | undefined;
+  let cursor = 0;
+  let startCursor = 0;
 
   try {
+    let head: number;
+    for (let a = 0; ; a++) {
+      try { head = await ops.head(); break; } catch (e) {
+        if (!(e instanceof RetryableSourceError) || a >= maxRetries) throw e;
+        await sleep(Math.min(8000, backoffMs * 2 ** a)); sum.retries++;
+      }
+    }
+    sum.head = head;
+    let c = await getCursor(db, opts.source);
+    if (c === null) c = opts.startBlock !== undefined ? opts.startBlock - 1 : head - (opts.backfillBlocks ?? 86400) - 1;
+    cursor = c;
+    startCursor = c;
     let requests = 0;
     let attempts = 0;
     while (cursor < head && requests < maxRequests && sum.windows < maxWindows && budget > 0) {

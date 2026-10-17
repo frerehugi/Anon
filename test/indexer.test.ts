@@ -245,3 +245,15 @@ test("SqliteDb.migrate is idempotent: running it twice does not fail on the ALTE
   const cols = (db.raw.prepare("PRAGMA table_info(runs)").all() as { name: string }[]).map((c) => c.name);
   assert.ok(cols.includes("source"));
 });
+
+test("a failing head request is retried and, if it keeps failing, recorded as an error run", async () => {
+  const db = new SqliteDb(); db.migrate();
+  let calls = 0;
+  const failing = { finalizedHead: async () => { calls++; throw new RetryableSourceError("finalized-head HTTP 529"); }, window: async () => { throw new Error("unreachable"); } } as unknown as Source;
+  await assert.rejects(runCycle(db, failing, { signers: [SIGNER], maxRetries: 2, backoffMs: 1, sleep: async () => {} }), /529/);
+  assert.equal(calls, 3);
+  const runs = await db.all<{ status: string; error: string }>("SELECT status, error FROM runs");
+  assert.deepEqual(runs.map((r) => r.status), ["error"]);
+  assert.match(runs[0].error, /529/);
+  db.close();
+});
