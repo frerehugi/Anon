@@ -26,6 +26,9 @@ function safeEqual(a: string, b: string): boolean {
   return d === 0;
 }
 
+/** Registry events are sparse, so one request covers far more blocks than a settlement window. */
+const REGISTRY_WINDOW_BLOCKS = 150_000;
+
 /** Must match the second cron in wrangler.toml. */
 export const DIRECTORY_CRON = "2-59/10 * * * *";
 
@@ -46,7 +49,7 @@ export default {
       // Free plan: 50 queries and 50 subrequests per invocation. Registry scan, registration files and probes share that budget.
       ctx.waitUntil(
         runDirectoryCycle(db, { registry: new SqdRegistrySource(cfg.sqdBase), fetcher: edgeFetcher }, {
-          maxWindows: 3, maxRequests: 6, maxRetries: 1, backoffMs: 500, maxStatements: 25, windowBlocks: cfg.windowBlocks, maxFetches: 6, maxProbes: 6, concurrency: 3,
+          maxWindows: 3, maxRequests: 6, maxRetries: 1, backoffMs: 500, maxStatements: 25, windowBlocks: REGISTRY_WINDOW_BLOCKS, maxFetches: 6, maxProbes: 6, concurrency: 3,
         })
           .then((r) => console.info(`directory: +${r.registry.events} events, files ${r.pending.ok}/${r.pending.attempted}, probes ${r.probes.pass}/${r.probes.probed}, caughtUp=${r.registry.caughtUp}`))
           .catch((e) => console.error("directory error:", e)),
