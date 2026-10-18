@@ -1,6 +1,8 @@
-test
-docs
-loop
-executor
-agent
-scripts
+# Anchored with a leading slash: a bare "executor" would also drop src/executor, which the build needs.
+/test
+/docs
+/loop
+/executor
+/agent
+/scripts
+/examples
