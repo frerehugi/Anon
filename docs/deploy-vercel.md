@@ -13,7 +13,12 @@ answer `402` directly (a `308` would hide the challenge from agents and indexes)
 |---|---|---|
 | `PAY_TO` | Anon **revenue** wallet address (public) | Production |
 | `X402_API_KEY` | key from x402.celo.org (shown once) | Production |
+| `INDEX_URL` | `https://anon-indexer.frerehugi.workers.dev` (origin only, https) | Production |
+| `INDEX_READ_TOKEN` | the Worker's `READ_TOKEN` (same value; mark Sensitive) | Production |
 | `CELO_RPC_URL` | optional, defaults to forno | any |
+
+   `INDEX_URL` and `INDEX_READ_TOKEN` are a pair: without both, the two Index routes do not exist (404) and `/v1/pricing` lists only check and lint.
+   `PAY_TO` for Anon: `0xA137b7886F13B9903564B7B9236d12a7A7732E0f` (a separate inbound-only revenue wallet, not the agent wallet).
 
    Never set `DEV_UNPAID`. Never put the key in a Preview environment: previews would settle real money.
 3. Deploy. If a variable is missing the function answers `503 service not configured` instead of serving unpaid routes.
@@ -21,6 +26,17 @@ answer `402` directly (a `308` would hide the challenge from agents and indexes)
    ```sh
    BASE_URL=https://<your-deployment> EXPECTED_PAY_TO=0x<revenue wallet> npm run smoke
    ```
+
+## Endpoints and prices (USD, USDC/USDT/USAT)
+
+| Route | Price | Returns |
+|---|---|---|
+| `GET /v1/check?agentId=` | 0.05 | counterparty verdict for an ERC-8004 agent |
+| `GET /v1/lint?url=&method=` | 0.03 | findings for an x402 endpoint |
+| `GET /v1/index/report?days=` | 0.10 | measured Celo x402 economy report, aggregates only (the per-seller table is removed) |
+| `GET /v1/index/agents?...` or `?id=` | 0.02 | agent directory with probe results |
+
+Invalid input is rejected with 400 before the payment middleware, so it is never charged.
 
 ## Before real traffic
 - **Plan:** Vercel's Hobby plan is meant for non-commercial use; this service takes payments.

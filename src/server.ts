@@ -8,8 +8,10 @@ import { ASSETS, CELO_NETWORK } from "./constants.js";
 import { checkAgent } from "./check.js";
 import { lintEndpoint } from "./lint.js";
 import { nodeFetcher } from "./safeFetch.js";
+import { parseAgentsQuery, parseReportQuery, type ParseResult } from "./indexProxy.js";
+import { toPublicReport } from "./indexer/publicReport.js";
 
-const PRICES_USD = { check: 0.05, lint: 0.03 } as const;
+const PRICES_USD = { check: 0.05, lint: 0.03, indexReport: 0.1, indexAgents: 0.02 } as const;
 
 /** USD price -> base units for a 6-decimal stablecoin. */
 export function toBaseUnits(usd: number): string {
@@ -44,10 +46,27 @@ function validate(req: Request, res: Response, next: NextFunction) {
     const m = req.query.method;
     if (m !== undefined && m !== "GET" && m !== "POST") return bad(res, "method must be GET or POST");
   }
+  else if (req.path === "/v1/index/report" || req.path === "/v1/index/agents") {
+    const parsed = (req.path === "/v1/index/report" ? parseReportQuery : parseAgentsQuery)(req.query as Record<string, unknown>);
+    if (!parsed.ok) return bad(res, parsed.error);
+  }
   next();
 }
 
-export async function buildApp() {
+/** Calls the indexer Worker (fixed https origin from the environment) with the read token. The token never reaches the client. */
+async function fromIndex(base: string, token: string, parsed: ParseResult, fetchImpl: typeof fetch): Promise<{ status: number; json: any }> {
+  if (!parsed.ok) return { status: 400, json: { error: parsed.error } };
+  const url = `${base}${parsed.value.path}${parsed.value.search ? `?${parsed.value.search}` : ""}`;
+  const r = await fetchImpl(url, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) });
+  if (!r.ok) return { status: 502, json: { error: "index unavailable" } };
+  return { status: 200, json: await r.json() };
+}
+
+export async function buildApp(opts: { fetchImpl?: typeof fetch } = {}) {
+  const fetchImpl: typeof fetch = opts.fetchImpl ?? ((i, init) => fetch(i, init));
+  const indexUrl = (process.env.INDEX_URL ?? "").replace(/\/+$/, "");
+  const indexToken = process.env.INDEX_READ_TOKEN ?? "";
+  const indexOn = /^https:\/\/[^\s/]+$/.test(indexUrl) && indexToken.length > 0; // both or neither: the Index routes exist only when configured
   const payTo = process.env.PAY_TO ?? "";
   const apiKey = process.env.X402_API_KEY ?? "";
   const devUnpaid = process.env.DEV_UNPAID === "1";
@@ -76,9 +95,41 @@ export async function buildApp() {
       .register(CELO_NETWORK, new ExactEvmScheme())
       .registerExtension(bazaarResourceServerExtension);
 
+    const indexRoutes: Record<string, any> = indexOn
+      ? {
+          "GET /v1/index/report": {
+            accepts: accepts(PRICES_USD.indexReport, payTo),
+            description:
+              "Celo x402 Index: measured economic report of the Celo x402 economy (volume, payers, sellers, concentration, gas, payment-circuit share, independent demand). Aggregates only. Optional days=0.25..30.",
+            mimeType: "application/json",
+            extensions: {
+              ...declareDiscoveryExtension({
+                input: { days: "2" },
+                inputSchema: { properties: { days: { type: "string", pattern: "^\\d{1,2}(\\.\\d{1,2})?$" } } },
+                output: { example: { version: "0.1.0", totals: { settlements: 7490, gmvUsd: 26476 }, circuit: { gmvShare: 0.99 } } },
+              }),
+            },
+          },
+          "GET /v1/index/agents": {
+            accepts: accepts(PRICES_USD.indexAgents, payTo),
+            description:
+              "Directory of ERC-8004 agents on Celo with unpaid x402 probe results. Filters: x402=1, live=1, tag, q, owner, order, limit, offset; or id=<agentId> for one agent.",
+            mimeType: "application/json",
+            extensions: {
+              ...declareDiscoveryExtension({
+                input: { x402: "1", live: "1", limit: "10" },
+                inputSchema: { properties: { x402: { type: "string", enum: ["0", "1"] }, live: { type: "string", enum: ["0", "1"] }, limit: { type: "string" }, id: { type: "string" } } },
+                output: { example: { total: 1, items: [{ agentId: 9903, name: "Chainstack", x402Status: "live" }] } },
+              }),
+            },
+          },
+        }
+      : {};
+
     app.use(
       paymentMiddleware(
         {
+          ...indexRoutes,
           "GET /v1/check": {
             accepts: accepts(PRICES_USD.check, payTo),
             description:
@@ -122,9 +173,28 @@ export async function buildApp() {
     const method = req.query.method === "POST" ? "POST" : "GET";
     res.json(await lintEndpoint(String(req.query.url), { method, fetcher: nodeFetcher }));
   });
-  app.get("/v1/pricing", (_req, res) =>
-    res.json({ network: CELO_NETWORK, currency: "USD", tokens: STABLES.map(([, i]) => i.symbol), prices: PRICES_USD }),
-  );
+  if (indexOn) {
+    app.get("/v1/index/report", async (req, res) => {
+      try {
+        const out = await fromIndex(indexUrl, indexToken, parseReportQuery(req.query as Record<string, unknown>), fetchImpl);
+        res.status(out.status).json(out.status === 200 ? toPublicReport(out.json) : out.json);
+      } catch {
+        res.status(502).json({ error: "index unavailable" });
+      }
+    });
+    app.get("/v1/index/agents", async (req, res) => {
+      try {
+        const out = await fromIndex(indexUrl, indexToken, parseAgentsQuery(req.query as Record<string, unknown>), fetchImpl);
+        res.status(out.status).json(out.json);
+      } catch {
+        res.status(502).json({ error: "index unavailable" });
+      }
+    });
+  }
+  app.get("/v1/pricing", (_req, res) => {
+    const { indexReport, indexAgents, ...base } = PRICES_USD;
+    res.json({ network: CELO_NETWORK, currency: "USD", tokens: STABLES.map(([, i]) => i.symbol), prices: indexOn ? { ...base, indexReport, indexAgents } : base });
+  });
   return app;
 }
 

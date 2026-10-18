@@ -21,6 +21,8 @@ Trust before payment, for both sides of x402 on Celo:
 |---|---|---|---|
 | `GET /v1/check?agentId=<id>` | buyers | verdict ok/caution/avoid for an ERC-8004 agent, with reasons | $0.05 |
 | `GET /v1/lint?url=<https url>&method=GET\|POST` | sellers | findings and fixes for an x402 endpoint, without paying it | $0.03 |
+| `GET /v1/index/report?days=` | analysts | measured Celo x402 economy report (aggregates only) | $0.10 |
+| `GET /v1/index/agents?...` | agents | ERC-8004 agent directory with x402 probe results | $0.02 |
 
 Accepted tokens: USDC, USD₮, USA₮ (EIP-3009) on Celo mainnet via the Celo facilitator.
 Check signals: ERC-8004 identity and registration file, live x402 probe, reputation registry,

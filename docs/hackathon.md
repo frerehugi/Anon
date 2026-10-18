@@ -7,6 +7,7 @@ Winners announced 2026-11-13.
 - Celo mainnet only. Testnet does not count.
 - ERC-8021 attribution tag `celo_2cc7b29e484b` in every Celo mainnet transaction, from the first one.
   x402 settlements: submit the `payTo` address instead (tags not supported there yet).
+  Anon revenue `payTo` (public, inbound only): `0xA137b7886F13B9903564B7B9236d12a7A7732E0f`.
 - ERC-8004 identity for the agent, registered from the agent wallet.
 - Public GitHub repo at enrollment and until judging.
 - Code written during the hackathon. Anything reused must be disclosed.
