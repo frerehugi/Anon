@@ -11,7 +11,9 @@ import { JsonlLedger, MemoryLedger } from "../src/executor/ledger.js";
 
 const URL1 = "https://gateway.usebuy.ai/chainstack/celo";
 const limits = readFileSync("loop/policy/limits.yaml", "utf8");
-const allow = readFileSync("loop/policy/allowlist.yaml", "utf8").replace("enabled: false", "enabled: true");
+const shippedAllow = readFileSync("loop/policy/allowlist.yaml", "utf8");
+const allowOff = shippedAllow.replace("enabled: true", "enabled: false"); // the shipped file may have the endpoint switched on by the human
+const allow = allowOff.replace("enabled: false", "enabled: true");
 const policy = parsePolicy(limits, allow);
 const NOW = 1_800_000_000;
 const approval = parseApproval(JSON.stringify({ id: "a1", memo: "m1", experiment: "e1", cap: "1.00", expires: new Date((NOW + 3600) * 1000).toISOString(), approvedBy: "cio" }));
@@ -27,8 +29,8 @@ test("toAtomic is exact and strict", () => {
 });
 
 test("shipped policy parses; disabled endpoints stay off; bad config fails closed", () => {
-  const shipped = parsePolicy(limits, readFileSync("loop/policy/allowlist.yaml", "utf8"));
-  assert.equal(shipped.endpoints.length, 0); // nothing enabled by default
+  assert.equal(parsePolicy(limits, shippedAllow).endpoints.length <= 1, true);
+  assert.equal(parsePolicy(limits, allowOff).endpoints.length, 0); // an entry is off unless it says enabled: true
   assert.equal(policy.endpoints.length, 1);
   assert.equal(policy.perCallMax, 250000n);
   assert.throws(() => parsePolicy(limits.replace("chain_id: 42220", "chain_id: 1"), allow), PolicyError);
