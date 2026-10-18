@@ -39,3 +39,7 @@ Winners announced 2026-11-13.
   Tx `0x47e009c6ea5947a68514ec3673909979d006d8e9efc51a49ac0d0a3b8c605f7e`, block 80431638, status success.
   Checked on chain: USDC `Transfer` from the Anon wallet to the gateway `payTo`, 0.01; the facilitator signer submitted the tx and paid its gas
   (about 0.017 CELO), so the wallet's own nonce stayed at 2. Attribution for x402 settlements is by `payTo` / wallet, not by a tag in the tx.
+- **2026-10-18, first settlement on Anon's own API (self-test, not demand):** the Anon agent wallet called `GET /v1/lint` on the production
+  deployment (Vercel) and paid 0.03 USDC. Tx `0x220f93fc4fe29fb8325c3e8e81b8f31dfc209a4e1519803bfd94bc9340450a91`, block 80437591, status success.
+  Checked on chain: USDC `Transfer` from the agent wallet `0x3880…e1ea` to the Anon revenue wallet `0xA137…2E0f`, 0.03; submitted by the Celo
+  facilitator signer. Proves that settlement completes on serverless. Own traffic: `independent = n`, it does not count as customer demand.

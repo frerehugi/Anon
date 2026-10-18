@@ -10,8 +10,7 @@ Every decision is logged in this repo.
 Built for the **Agents on Open Rails** hackathon (Loops House x Celo). Tracks targeted:
 **Build with buy** and **USA₮ with x402**.
 
-> Status: core, CLI and paid server implemented and tested read-only against Celo mainnet.
-> No payment has been settled and no transaction has been sent yet.
+> Status: paid API live on Vercel; first settlements verified on Celo mainnet (see docs/hackathon.md).
 
 ## What Anon sells
 
