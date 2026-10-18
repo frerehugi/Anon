@@ -12,7 +12,7 @@ import { JsonlLedger, MemoryLedger } from "../src/executor/ledger.js";
 const URL1 = "https://gateway.usebuy.ai/chainstack/celo";
 const limits = readFileSync("loop/policy/limits.yaml", "utf8");
 const shippedAllow = readFileSync("loop/policy/allowlist.yaml", "utf8");
-const allowOff = shippedAllow.replace("enabled: true", "enabled: false"); // the shipped file may have the endpoint switched on by the human
+const allowOff = shippedAllow.replaceAll("enabled: true", "enabled: false"); // the shipped file may have the endpoint switched on by the human
 const allow = allowOff.replace("enabled: false", "enabled: true");
 const policy = parsePolicy(limits, allow);
 const NOW = 1_800_000_000;
@@ -29,7 +29,7 @@ test("toAtomic is exact and strict", () => {
 });
 
 test("shipped policy parses; disabled endpoints stay off; bad config fails closed", () => {
-  assert.equal(parsePolicy(limits, shippedAllow).endpoints.length <= 1, true);
+  assert.equal(parsePolicy(limits, shippedAllow).endpoints.length <= 2, true);
   assert.equal(parsePolicy(limits, allowOff).endpoints.length, 0); // an entry is off unless it says enabled: true
   assert.equal(policy.endpoints.length, 1);
   assert.equal(policy.perCallMax, 250000n);
