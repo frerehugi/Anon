@@ -1,5 +1,6 @@
 // Vercel Node function: wraps the Express app built from src/server.ts (compiled to dist/ by `npm run build`).
 import { buildApp } from "../dist/server.js";
+import { stripRoutingParams } from "../dist/vercelUrl.js";
 
 let appPromise;
 
@@ -10,6 +11,7 @@ export default async function handler(req, res) {
   });
   try {
     const app = await appPromise;
+    req.url = stripRoutingParams(req.url);
     return app(req, res);
   } catch (e) {
     console.error("startup failed:", e.message);

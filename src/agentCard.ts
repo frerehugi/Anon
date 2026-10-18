@@ -34,3 +34,19 @@ export function buildCard(opts: { agentId?: bigint | number; services?: AgentCar
 export function toDataUri(card: AgentCard): string {
   return `data:application/json;base64,${Buffer.from(JSON.stringify(card), "utf8").toString("base64")}`;
 }
+
+/** Public origin of the live API (Vercel). Change it together with a setAgentURI when a custom domain replaces it. */
+export const API_ORIGIN = "https://anon-frerehugi1.vercel.app";
+
+/**
+ * The paid routes, as the registry directory should list them. Each URL must answer an unpaid request with a 402,
+ * so required query parameters carry an example value (the crawler probes these URLs without paying).
+ */
+export function paidServices(origin: string = API_ORIGIN): AgentCard["services"] {
+  return [
+    { name: "x402 Index report", endpoint: `${origin}/v1/index/report` },
+    { name: "x402 Index agents", endpoint: `${origin}/v1/index/agents` },
+    { name: "x402 agent check", endpoint: `${origin}/v1/check?agentId=9903` },
+    { name: "x402 endpoint lint", endpoint: `${origin}/v1/lint?url=https://example.com` },
+  ];
+}

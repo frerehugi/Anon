@@ -25,8 +25,17 @@ checks chain id 42220, verifies both transactions with `verifyTx`, and writes `a
 
 ## Card state
 
-`x402Support` is `false` and `services` is empty until a paid endpoint is live. Then the card is updated with another `setAgentURI`
-(services plus `x402Support: true`), which the directory crawler then probes like any other agent.
+Registered with `x402Support: false` and no services, because nothing paid was live. Once the API was live and tested, the card is updated with
+another `setAgentURI` (`scripts/update-agent-card.ts`): it first probes every listed endpoint without paying and refuses to advertise one that
+does not answer with a valid 402, then lists the four paid routes (`src/agentCard.ts`, `paidServices`) and sets `x402Support: true`.
+The directory crawler then probes these URLs like any other agent's. If the API origin changes (custom domain), update `API_ORIGIN` and run the script again.
+
+```sh
+npx tsx scripts/update-agent-card.ts --dry     # probes the endpoints, simulates; no key
+read -s -p "Key: " AGENT_PRIVATE_KEY; echo; export AGENT_PRIVATE_KEY
+npx tsx scripts/update-agent-card.ts --send
+unset AGENT_PRIVATE_KEY
+```
 
 Status: **registered on 2026-10-18** as agent **9973** (owner and agent wallet `0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea`).
 - register: `0x3c0782579d2be0a01f742969a9686dee155d286b487c4aee51961fb927e1b456` (block 80426275)
