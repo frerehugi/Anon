@@ -4,7 +4,7 @@
 buy:
   - url: https://gateway.usebuy.ai/chainstack/celo
     purpose: Celo JSON-RPC
-    enabled: false
+    enabled: true
   # add SQD / other data endpoints after quoting
 tokens: [USDC, USDT, USAT]
 facilitator:

@@ -4,7 +4,7 @@ A small deterministic component (no LLM). It is the only component that may sign
 Code: `src/executor/`, CLI: `npm run cli -- executor ...`.
 
 **Status:** policy engine, approvals, ledger, dry-run flow and the x402 signer (`src/executor/x402Signer.ts`) are built and tested offline.
-**No live payment has been made yet.** Live runs need `--live` and `AGENT_PRIVATE_KEY` in the environment.
+**First live payment made 2026-10-18** (0.01 USDC to the buy gateway, settled; see `docs/hackathon.md`). Live runs need `--live` and `AGENT_PRIVATE_KEY` in the environment.
 
 ## Signer rules
 

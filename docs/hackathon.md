@@ -30,3 +30,11 @@ Winners announced 2026-11-13.
 ## Open questions
 - ~~Are two projects per person allowed?~~ Resolved: the owner confirmed multiple projects are approved (2026-10-15). Keep Anon fully separate from other entries: own Loops account, tag, wallet and ERC-8004 identity.
 - ~~Does the facilitator settle USA₮ for payers?~~ Resolved: yes, `GET /supported` on api.x402.celo.org lists USAT (EIP-3009).
+
+## Evidence log
+
+- **2026-10-18, first paid call through buy (Build with buy):** Anon wallet paid 0.01 USDC to the buy gateway `payTo` for one
+  Chainstack Celo JSON-RPC call (`eth_blockNumber`). x402 v1 quote, signed by the executor, settled by the Celo facilitator.
+  Tx `0x47e009c6ea5947a68514ec3673909979d006d8e9efc51a49ac0d0a3b8c605f7e`, block 80431638, status success.
+  Checked on chain: USDC `Transfer` from the Anon wallet to the gateway `payTo`, 0.01; the facilitator signer submitted the tx and paid its gas
+  (about 0.017 CELO), so the wallet's own nonce stayed at 2. Attribution for x402 settlements is by `payTo` / wallet, not by a tag in the tx.
