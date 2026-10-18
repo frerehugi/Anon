@@ -39,8 +39,7 @@ answer `402` directly (a `308` would hide the challenge from agents and indexes)
 Invalid input is rejected with 400 before the payment middleware, so it is never charged.
 
 ## Before real traffic
-- **Plan:** Vercel's Hobby plan is meant for non-commercial use; this service takes payments.
-  Check Vercel's current terms and use a plan that allows it.
+- **Plan:** Pro since 2026-10-18 (the Hobby plan is for non-commercial use only; this service takes payments).
 - **Duration:** `maxDuration` is 30 s (fits Hobby and Pro). Probe and RPC timeouts are well below that.
 - **First payment:** serverless can freeze after the response, and x402 settles after the handler.
   Do one tiny real call (`/v1/lint`, $0.03) from the Anon wallet, then confirm the settlement
