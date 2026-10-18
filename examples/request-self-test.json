@@ -1,0 +1,10 @@
+{
+  "id": "self-test-1",
+  "wallet": "ops",
+  "url": "https://anon-frerehugi1.vercel.app/v1/lint?url=https://gateway.usebuy.ai/chainstack/celo&method=POST",
+  "method": "GET",
+  "token": "USDC",
+  "amount": "0.03",
+  "experiment": "self-test",
+  "approvalId": "self-test"
+}

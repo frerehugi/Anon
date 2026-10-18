@@ -5,6 +5,10 @@ buy:
   - url: https://gateway.usebuy.ai/chainstack/celo
     purpose: Celo JSON-RPC
     enabled: true
+  # Anon's own paid API: settlement test only. Own traffic is not demand (independent = n in the ledger).
+  - url: https://anon-frerehugi1.vercel.app/v1/lint
+    purpose: settlement test of Anon's own endpoint
+    enabled: true
   # add SQD / other data endpoints after quoting
 tokens: [USDC, USDT, USAT]
 facilitator:
