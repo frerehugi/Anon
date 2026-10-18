@@ -1,10 +1,31 @@
 # Agent identity (ERC-8004)
 
-Register Anon's identity from the **Anon agent wallet** (not any other project's wallet).
+Anon's identity is registered from the **Anon agent wallet** `0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea` (not any other project's wallet).
 Registry on Celo mainnet: `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`.
 Guide: https://docs.celo.org/build-on-celo/build-with-ai/8004
 
-Put the public agent card (`agent-card.json`) here after registration. Public data only.
-Only the Anon-facing service is registered; the internal loop bots are not.
+Only the Anon-facing identity is registered; the internal loop bots are not.
 
-Status: not registered yet.
+## How
+
+The card (`src/agentCard.ts`) is stored on-chain as a `data:` URI, so no hosting is needed. Two transactions, both carrying the
+hackathon attribution tag `celo_2cc7b29e484b` (ERC-8021, via `withAttribution`):
+
+1. `register(agentURI)`: mints the identity; the registry sets the agent wallet to the sender.
+2. `setAgentURI(agentId, uri)`: the id is read from the `Registered` event of the receipt (not from the call's return value) and written
+   into the card's `registrations` entry, so card and registry agree.
+
+```sh
+npx tsx scripts/register-agent.ts --dry                      # simulation only, no key needed (cost ~0.13 CELO)
+AGENT_PRIVATE_KEY=0x... npx tsx scripts/register-agent.ts --send   # on your own machine, key only in the environment
+```
+
+The script refuses a key that does not belong to the Anon wallet, refuses a second registration for the same wallet (`--force` overrides),
+checks chain id 42220, verifies both transactions with `verifyTx`, and writes `agent/agent-card.json`.
+
+## Card state
+
+`x402Support` is `false` and `services` is empty until a paid endpoint is live. Then the card is updated with another `setAgentURI`
+(services plus `x402Support: true`), which the directory crawler then probes like any other agent.
+
+Status: dry run verified against mainnet on 2026-10-18; not registered yet.
