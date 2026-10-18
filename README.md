@@ -58,7 +58,7 @@ PAY_TO=0x... X402_API_KEY=... npm start   # paid server; refuses to start withou
 
 ```
 services/   x402 endpoints Anon sells (payTo = revenue wallet)
-executor/   deterministic payment executor (policy engine built, signer pending); code in src/executor
+executor/   deterministic payment executor (policy engine and x402 signer built, no live payment yet); code in src/executor
 loop/       the agent team: roles, policy, memos, decisions, ledger, audits
 agent/      ERC-8004 agent card and registration
 docs/       hackathon notes, risks

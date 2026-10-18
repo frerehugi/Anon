@@ -46,6 +46,14 @@ test("canonicalUrl", () => {
 
 test("a valid request is allowed", () => assert.equal(reasons(req()), ""));
 
+test("method and body rules", () => {
+  assert.equal(reasons(req({ method: "POST", body: "{}" })), "");
+  assert.match(reasons(req({ method: "GET", body: "{}" })), /body/);
+  assert.match(reasons(req({ body: "{}" })), /body/);
+  assert.match(reasons(req({ method: "POST", body: "x".repeat(20_001) })), /body/);
+  assert.match(reasons(req({ method: "PUT" as never })), /GET or POST/);
+});
+
 test("denials: endpoint, token, amount, approval", () => {
   assert.match(reasons(req({ url: "https://evil.example/pay" })), /allowlist/);
   assert.match(reasons(req({ url: URL1 + "/other" })), /allowlist/);

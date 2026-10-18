@@ -4,7 +4,7 @@ import { evaluate, type Decision, type LedgerEntry, type PayRequest, type State 
 import type { LedgerStore } from "./ledger.js";
 import type { Policy } from "./policy.js";
 
-export interface PayOutcome { status: "settled" | "failed" | "uncertain"; txHash?: string; detail?: string }
+export interface PayOutcome { status: "settled" | "failed" | "uncertain"; txHash?: string; detail?: string; body?: string }
 
 /** Holds the key (outside this repo's agents). `failed` only when nothing was sent; anything unclear must be `uncertain`. */
 export interface Signer {
@@ -22,7 +22,8 @@ export interface ExecutorDeps {
   now?: () => number;
 }
 
-export interface ExecResult { decision: Decision; status: LedgerEntry["status"]; txHash?: string; detail?: string }
+/** `body` is what the paid endpoint returned. It is untrusted data and is not written to the ledger. */
+export interface ExecResult { decision: Decision; status: LedgerEntry["status"]; txHash?: string; detail?: string; body?: string }
 
 export class Executor {
   private queue: Promise<unknown> = Promise.resolve();
@@ -69,6 +70,6 @@ export class Executor {
       out = { status: "uncertain", detail: `signer threw: ${(e as Error).message.slice(0, 200)}` }; // never retried automatically
     }
     await this.d.ledger.append({ ...base, status: out.status, txHash: out.txHash, detail: out.detail });
-    return { decision, status: out.status, txHash: out.txHash, detail: out.detail };
+    return { decision, status: out.status, txHash: out.txHash, detail: out.detail, body: out.status === "settled" ? out.body : undefined };
   }
 }

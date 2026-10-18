@@ -33,3 +33,6 @@ export const VISA_API = "https://agent-api.self.xyz";
 
 /** Block of the first mint in the ERC-8004 Identity Registry on Celo (Blockscout, token 1): 2026-02-06. */
 export const REGISTRY_FIRST_BLOCK = 58_476_306;
+
+/** Public address of the Anon agent wallet (also the ERC-8004 owner of agent 9973). The only wallet the executor signs with. */
+export const ANON_AGENT_WALLET = "0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea" as const;

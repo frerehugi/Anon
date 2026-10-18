@@ -12,7 +12,12 @@ export interface PayRequest {
   amount: bigint; // atomic units (6 decimals)
   experiment: string;
   approvalId?: string;
+  /** x402 endpoints are called with GET (default) or POST with a JSON body, e.g. JSON-RPC. The body is not stored in the ledger. */
+  method?: "GET" | "POST";
+  body?: string;
 }
+
+export const MAX_REQUEST_BODY = 20_000;
 
 export interface LedgerEntry {
   requestId: string;
@@ -81,6 +86,8 @@ export function evaluate(req: PayRequest, policy: Policy, state: State): Decisio
   if (req.amount <= 0n) deny("amount must be positive");
   if (req.amount > policy.perCallMax) deny(`amount ${formatAtomic(req.amount)} is above the per-call limit ${formatAtomic(policy.perCallMax)}`);
   if (!req.experiment) deny("experiment is missing");
+  if (req.method !== undefined && req.method !== "GET" && req.method !== "POST") deny("method must be GET or POST");
+  if (req.body !== undefined && (req.method !== "POST" || req.body.length > MAX_REQUEST_BODY)) deny(`a body needs method POST and at most ${MAX_REQUEST_BODY} characters`);
 
   const approval = req.approvalId ? state.approvals.find((a) => a.id === req.approvalId) : undefined;
   if (!approval) deny("no matching CIO approval");
