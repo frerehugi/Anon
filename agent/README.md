@@ -28,4 +28,7 @@ checks chain id 42220, verifies both transactions with `verifyTx`, and writes `a
 `x402Support` is `false` and `services` is empty until a paid endpoint is live. Then the card is updated with another `setAgentURI`
 (services plus `x402Support: true`), which the directory crawler then probes like any other agent.
 
-Status: dry run verified against mainnet on 2026-10-18; not registered yet.
+Status: **registered on 2026-10-18** as agent **9973** (owner and agent wallet `0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea`).
+- register: `0x3c0782579d2be0a01f742969a9686dee155d286b487c4aee51961fb927e1b456` (block 80426275)
+- setAgentURI: `0x77f3852b627042c05dfd52c0ea760c0a336c22d98c95ee0c2c6156075ba9723d` (block 80426276)
+Both carry `celo_2cc7b29e484b`; checked with `verifyTx`. Card on-chain parses and is coherent with the id.
