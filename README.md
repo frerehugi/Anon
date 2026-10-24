@@ -90,6 +90,18 @@ Private keys are never stored in this repo or given to any agent. See `.env.exam
 - ERC-8021 attribution tag: `celo_2cc7b29e484b` (every Celo mainnet transaction carries it;
   x402 settlements are attributed via the `payTo` address instead)
 
+## Hackathon disclosure
+
+- All code in this repository was written during the hackathon (from 2026-10-15), by a human owner working with an AI coding agent
+  (Claude Code); the Loop's bots are agents as well. Commits made by the agent say so in their trailer.
+- Reused ideas, not code: the cron-worker layout follows the owner's other project OSIRIS (own design, rewritten here); the executor's
+  "check at signing time, default deny, limits, kill switch" pattern is inspired by AgentVault. No code was copied from either.
+- Third-party libraries are used as published: x402 (`@x402/*`), viem, `@celo/attribution-tags`, express, yaml.
+- Gas of x402 settlements is paid by the Celo facilitator and is not counted as Anon's contribution; Anon's own transactions
+  (ERC-8004 registration and updates) carry the tag.
+- Data is read from public sources only (Celo RPC, the free SQD portal, public ERC-8004 registration files, unpaid probes).
+  No secrets are stored in this repository.
+
 ## License
 
-MIT (add `LICENSE` before making the repo public).
+MIT, see `LICENSE`.
