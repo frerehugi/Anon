@@ -37,7 +37,12 @@ npx tsx scripts/update-agent-card.ts --send
 unset AGENT_PRIVATE_KEY
 ```
 
-Status: **registered on 2026-10-18** as agent **9973** (owner and agent wallet `0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea`).
+
 - register: `0x3c0782579d2be0a01f742969a9686dee155d286b487c4aee51961fb927e1b456` (block 80426275)
 - setAgentURI: `0x77f3852b627042c05dfd52c0ea760c0a336c22d98c95ee0c2c6156075ba9723d` (block 80426276)
 Both carry `celo_2cc7b29e484b`; checked with `verifyTx`. Card on-chain parses and is coherent with the id.
+
+## Update log
+
+- 2026-10-24: `x402Support` set to true and four paid routes listed (tx `0xc21bee39fbe735d37dac81f8a58b740abf9186af1b5f9c3732cebb69d3c15a8f`, block 80952051), origin `anon-frerehugi1.vercel.app`.
+- 2026-10-24: origin changed to `https://anon.sterntalerapp.xyz` (tx `0xaa3a5a9b5ebabb27697c9759e8b8fabd89cabfeadd59805bfb9612242f98c3fa`, block 80952787). Both carry `celo_2cc7b29e484b`; the card on chain equals `agent-card.json`.

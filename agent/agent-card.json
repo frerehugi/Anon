@@ -2,8 +2,25 @@
   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
   "name": "Anon",
   "description": "Anon builds the Celo x402 Index: measured economic metrics of the Celo x402 economy and a directory of ERC-8004 agents with unpaid x402 probes. A small agent team with a human owner; payments run through a policy-limited executor. Built for the Agents on Open Rails hackathon. In development.",
-  "services": [],
-  "x402Support": false,
+  "services": [
+    {
+      "name": "x402 Index report",
+      "endpoint": "https://anon.sterntalerapp.xyz/v1/index/report"
+    },
+    {
+      "name": "x402 Index agents",
+      "endpoint": "https://anon.sterntalerapp.xyz/v1/index/agents"
+    },
+    {
+      "name": "x402 agent check",
+      "endpoint": "https://anon.sterntalerapp.xyz/v1/check?agentId=9903"
+    },
+    {
+      "name": "x402 endpoint lint",
+      "endpoint": "https://anon.sterntalerapp.xyz/v1/lint?url=https://example.com"
+    }
+  ],
+  "x402Support": true,
   "active": true,
   "supportedTrust": [
     "reputation"

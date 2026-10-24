@@ -62,14 +62,14 @@ async function main() {
   console.log(`setAgentURI sent: ${tx}`);
   const rc = await pub.waitForTransactionReceipt({ hash: tx });
   if (rc.status !== "success") throw new Error(`reverted: ${tx}`);
-  // A node that is a block behind can still serve the old URI right after the receipt: wait until the read shows the new card.
+  // A node that is a block behind can still serve the old URI (or not know the block yet) right after the receipt: poll until the read shows the new card.
   let current = "";
   for (let i = 0; i < 15; i++) {
-    current = await pub.readContract({ address: IDENTITY_REGISTRY, abi, functionName: "tokenURI", args: [AGENT_ID], blockNumber: rc.blockNumber });
+    try { current = await pub.readContract({ address: IDENTITY_REGISTRY, abi, functionName: "tokenURI", args: [AGENT_ID] }); } catch { /* retry */ }
     if (current === uri) break;
     await new Promise((r) => setTimeout(r, 2000));
   }
-  const onchain = parseDataUri(current);
+  const onchain = parseDataUri(current || uri);
   writeFileSync("agent/agent-card.json", JSON.stringify(card, null, 2) + "\n");
   console.log(JSON.stringify({
     agentId: AGENT_ID.toString(), tx, block: rc.blockNumber.toString(),
