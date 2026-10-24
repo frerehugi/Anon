@@ -79,11 +79,11 @@ export class X402Signer implements Signer {
       // 3. paid request: from here on, only a clean receipt counts as settled
       const headers = this.http.encodePaymentSignatureHeader(payload);
       let paid;
-      try { paid = await this.o.fetcher(req.url, { ...base, headers: { ...base.headers, ...headers } }); } catch (e) { return { status: "uncertain", detail: `paid request failed after signing: ${(e as Error).message.slice(0, 120)}` }; }
+      try { paid = await this.o.fetcher(req.url, { ...base, headers: { ...base.headers, ...headers }, maxBytes: req.maxResponseBytes }); } catch (e) { return { status: "uncertain", detail: `paid request failed after signing: ${(e as Error).message.slice(0, 120)}` }; }
       let settle;
       try { settle = this.http.getPaymentSettleResponse((n) => paid.headers.get(n)); } catch { settle = undefined; }
       if (paid.status >= 200 && paid.status < 300 && settle?.success === true) {
-        return { status: "settled", txHash: settle.transaction || undefined, body: paid.body, detail: `paid ${auth.value} atomic ${req.token}` };
+        return { status: "settled", txHash: settle.transaction || undefined, body: paid.body, detail: `paid ${auth.value} atomic ${req.token}${paid.truncated ? "; response was cut at the size cap" : ""}` };
       }
       return { status: "uncertain", detail: `HTTP ${paid.status} after signing${settle ? `, settle success=${settle.success}` : ", no settlement receipt"}` };
     } finally {

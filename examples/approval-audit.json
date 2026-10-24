@@ -1,0 +1,1 @@
+{ "id": "audit", "memo": "settlement-audit", "experiment": "audit", "cap": "0.20", "expires": "2026-11-10T00:00:00Z", "approvedBy": "cio" }

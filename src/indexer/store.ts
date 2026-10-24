@@ -58,3 +58,7 @@ export async function dataRange(db: Db): Promise<{ minTs: number | null; maxTs: 
 
 export const lastRun = (db: Db) =>
   db.all<Record<string, unknown>>("SELECT id, started_at, finished_at, from_block, to_block, windows, settlements, unclassified, status, error FROM runs ORDER BY id DESC LIMIT 1");
+
+/** Random settlements for an independent re-check. `n` is clamped to 1..500. */
+export const sampleSettlements = (db: Db, n: number) =>
+  db.all<SettlementDbRow>("SELECT * FROM settlements ORDER BY RANDOM() LIMIT ?", [Math.min(500, Math.max(1, Math.floor(n)))]);

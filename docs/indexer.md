@@ -71,3 +71,9 @@ Environment overrides: `SIGNERS`, `LABELS`, `WINDOW_BLOCKS`. Default signers: th
 
 `test/indexer.test.ts` covers parsing, idempotency, atomic rollback, truncated responses, window shrinking, overload backoff,
 retry limit with a recorded error run, statement budget across cycles, the report, the D1 adapter and the SQL dump round trip.
+
+## Independent check
+
+`GET /v1/audit/sample?n=` (bearer `READ_TOKEN`) returns random indexed settlements so that another component can verify them. The executor job `executor audit`
+(see `executor/README.md`) pays Chainstack through buy to fetch the receipts and compares them with the rows. Public Forno nodes are not consistent with each other
+(a receipt can be `null` on one node and present on the next), which is one reason to use a paid, dedicated node for audits.

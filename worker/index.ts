@@ -5,6 +5,7 @@ import { D1Db, type D1DatabaseLike } from "../src/indexer/db.js";
 import { runCycle } from "../src/indexer/cycle.js";
 import { SqdSource } from "../src/indexer/sqd.js";
 import { buildReport, status } from "../src/indexer/report.js";
+import { sampleSettlements } from "../src/indexer/store.js";
 import { parseConfig, type IndexerEnv } from "../src/indexer/config.js";
 import { runDirectoryCycle } from "../src/directory/crawler.js";
 import { SqdRegistrySource } from "../src/directory/registrySource.js";
@@ -88,6 +89,14 @@ export default {
         x402: q.get("x402") === "1", live: q.get("live") === "1", tag: q.get("tag")?.slice(0, 40) || undefined, q: q.get("q")?.slice(0, 80) || undefined,
         owner: /^0x[0-9a-fA-F]{40}$/.test(q.get("owner") ?? "") ? q.get("owner")! : undefined, order: q.get("order") === "id" ? "id" : "recent", limit: num("limit"), offset: num("offset"),
       }));
+    }
+
+    if (url.pathname === "/v1/audit/sample") {
+      const denied = authorized(req, env);
+      if (denied) return denied;
+      const n = Number(url.searchParams.get("n") ?? 100);
+      const rows = await sampleSettlements(db, Number.isFinite(n) ? n : 100);
+      return json({ n: rows.length, rows: rows.map((r) => ({ txHash: r.tx_hash, logIndex: r.log_index, block: r.block, token: r.token, payer: r.payer, payTo: r.pay_to, amountAtomic: r.amount_atomic, relayer: r.relayer })) });
     }
 
     if (url.pathname === "/v1/report") {

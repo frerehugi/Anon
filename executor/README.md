@@ -56,6 +56,24 @@ npm run cli -- executor status
 4. Live: `AGENT_PRIVATE_KEY=0x... npm run cli -- executor run examples/payment-request.json --live`, then unset the key.
 5. Check `loop/ledger/payments.jsonl` (`pending` then `settled` with the tx hash) and the wallet balance.
 
+## Jobs: settlement audit through buy
+
+`executor audit` re-checks a random sample of the indexed settlements against an independent RPC that Anon pays for through buy
+(Chainstack Celo, one JSON-RPC batch of up to 2000 receipts for 0.01 USDC). It is the Auditor role in practice: the indexer's rows are
+compared with receipts it did not produce. The executor's policy applies as for any payment (allowlist, approval `audit`, limits, ledger).
+
+```sh
+INDEX_READ_TOKEN=...   # the indexer's READ_TOKEN, entered without echo
+npm run cli -- executor audit --n 100                 # dry run: shows the plan and the policy decision, pays nothing
+AGENT_PRIVATE_KEY=0x... npm run cli -- executor audit --n 100 --live
+```
+
+- Needs `examples/approval-audit.json` copied to `loop/decisions/` and the Worker route `GET /v1/audit/sample?n=` (bearer `READ_TOKEN`, at most 500 rows).
+- Per row it checks: tx status success, block, the `Transfer` log at the recorded index, token contract, payer, payTo and amount. The relayer is a soft check.
+- A missing receipt is **inconclusive**, not a mismatch: public RPC nodes disagree with each other (Forno answered `null` for transactions it returned a moment earlier),
+  so those hashes are asked for again once (`--rounds`, default 2, at most 3 batches). The match rate is matched / (checked - inconclusive).
+- The report goes to `loop/audits/<date>-settlement-audit-<id>.json` with payment tx hashes, counts and mismatch reasons, but no payer or payTo addresses.
+
 ## Not done yet
 
 - Running the Anon wallet's key in a hosted executor (today it runs where the key is typed in by a human).
