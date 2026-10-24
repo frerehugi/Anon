@@ -6,6 +6,7 @@
   "cleanUrls": false,
   "rewrites": [
     { "source": "/health", "destination": "/api" },
+    { "source": "/stats", "destination": "/api" },
     { "source": "/v1/:path*", "destination": "/api" }
   ],
   "functions": {

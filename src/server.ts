@@ -173,6 +173,23 @@ export async function buildApp(opts: { fetchImpl?: typeof fetch } = {}) {
     const method = req.query.method === "POST" ? "POST" : "GET";
     res.json(await lintEndpoint(String(req.query.url), { method, fetcher: nodeFetcher }));
   });
+  // Free, public aggregates for the landing page: the Worker's /health needs no token. Cached for a minute.
+  if (/^https:\/\/[^\s/]+$/.test(indexUrl)) {
+    app.get("/stats", async (_req, res) => {
+      try {
+        const r = await fetchImpl(`${indexUrl}/health`, { signal: AbortSignal.timeout(10_000) });
+        if (!r.ok) throw new Error("upstream");
+        const h: any = await r.json();
+        const d = h.directory ?? {};
+        res.set("cache-control", "public, max-age=30, s-maxage=60").json({
+          settlementsIndexed: h.settlements, dataFrom: h.dataFrom, dataTo: h.dataTo, cursorBlock: h.cursorBlock,
+          agentsIndexed: d.agents, agentsDeclaringX402: d.declaredX402, endpointsProbed: d.endpointsProbed, endpointsPassing: d.endpointsPassing, agentsLive: d.agentsLive,
+        });
+      } catch {
+        res.status(502).json({ error: "stats unavailable" });
+      }
+    });
+  }
   if (indexOn) {
     app.get("/v1/index/report", async (req, res) => {
       try {

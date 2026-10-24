@@ -3,29 +3,98 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Anon</title>
+<title>Anon: the Celo x402 Index</title>
+<meta name="description" content="Measured economics of the Celo x402 economy and a directory of ERC-8004 agents with unpaid x402 probes. Pay per call in USDC, USD₮ or USA₮.">
 <style>
-  :root { --bg:#fff; --fg:#14201a; --muted:#5b6b62; --line:#dfe6e1; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1511; --fg:#e8efe9; --muted:#9bb0a3; --line:#25322a; } }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,sans-serif; }
-  main { max-width:44rem; margin:0 auto; padding:2.5rem 16px; }
-  h1 { margin:0 0 .25rem; } p.lead { color:var(--muted); margin-top:0; }
-  table { width:100%; border-collapse:collapse; margin:1.5rem 0; }
-  th,td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--line); vertical-align:top; }
-  code { font-family:ui-monospace,monospace; font-size:.9em; overflow-wrap:anywhere; }
+  :root { --bg:#fbfaf6; --fg:#16201a; --muted:#5c6b61; --line:#dde3dc; --card:#ffffff; --accent:#1c6b45; --accent-fg:#ffffff; --chip:#e9f1ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1511; --fg:#e8efe9; --muted:#9bb0a3; --line:#26332b; --card:#151d18; --accent:#6fd39b; --accent-fg:#0f1511; --chip:#1b2820; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:56rem; margin:0 auto; padding:2.5rem 16px 4rem; }
+  h1 { font-size:clamp(2rem,5vw,3rem); line-height:1.1; margin:0 0 .5rem; letter-spacing:-.02em; }
+  h2 { font-size:1.15rem; margin:2.5rem 0 .75rem; }
+  p.lead { font-size:1.15rem; color:var(--muted); max-width:40rem; margin:0 0 1.25rem; }
+  .chips { display:flex; flex-wrap:wrap; gap:.5rem; margin:0 0 1.5rem; }
+  .chip { background:var(--chip); border-radius:999px; padding:.2rem .7rem; font-size:.85rem; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr)); gap:.75rem; margin:1.5rem 0; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:.9rem 1rem; }
+  .stat b { display:block; font-size:1.7rem; line-height:1.2; font-variant-numeric:tabular-nums; }
+  .stat span { color:var(--muted); font-size:.85rem; }
+  .note { color:var(--muted); font-size:.85rem; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th,td { text-align:left; padding:.65rem .8rem; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  th { color:var(--muted); font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+  td.price { white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:600; }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.88em; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; overflow:auto; font-size:.85rem; }
+  a { color:var(--accent); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:.75rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; }
+  .card h3 { margin:0 0 .35rem; font-size:1rem; }
+  .card p { margin:0; color:var(--muted); font-size:.92rem; }
+  footer { margin-top:3rem; color:var(--muted); font-size:.85rem; }
+  @media (max-width:520px) { th:nth-child(2), td:nth-child(2) { display:none; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>Anon</h1>
-  <p class="lead">Trust before payment, for both sides of x402 on Celo.</p>
+  <h1>Anon: the Celo x402 Index</h1>
+  <p class="lead">Measured economics of the Celo x402 economy, a directory of ERC-8004 agents that checks their x402 endpoints without paying them, and trust checks for both sides of a payment. Pay per call.</p>
+  <div class="chips">
+    <span class="chip">Celo mainnet</span><span class="chip">x402 via Celo facilitator</span><span class="chip">USDC · USD₮ · USA₮</span><span class="chip">ERC-8004 agent #9973</span>
+  </div>
+
+  <h2>Live from the index</h2>
+  <div class="stats" id="stats" aria-live="polite">
+    <div class="stat"><b data-k="settlementsIndexed">–</b><span>x402 settlements indexed</span></div>
+    <div class="stat"><b data-k="agentsIndexed">–</b><span>ERC-8004 agents in the directory</span></div>
+    <div class="stat"><b data-k="agentsDeclaringX402">–</b><span>declare x402 support</span></div>
+    <div class="stat"><b data-k="endpointsPassing">–</b><span>endpoints pass the unpaid probe</span></div>
+    <div class="stat"><b data-k="agentsLive">–</b><span>agents with a live endpoint</span></div>
+  </div>
+  <p class="note" id="stamp">Counts come from our own indexer (Celo RPC data via the SQD portal and public registration files). Updated every few minutes.</p>
+
+  <h2>Pay-per-call API</h2>
   <table>
-    <tr><th>Endpoint</th><th>For</th><th>Price</th></tr>
-    <tr><td><code>GET /v1/check?agentId=&lt;id&gt;</code><br>Verdict ok / caution / avoid for an ERC-8004 agent, with reasons.</td><td>Buyers</td><td>$0.05</td></tr>
-    <tr><td><code>GET /v1/lint?url=&lt;https url&gt;</code><br>Findings and fixes for an x402 endpoint, checked without paying it.</td><td>Sellers</td><td>$0.03</td></tr>
+    <tr><th>Route</th><th>For</th><th>Price</th></tr>
+    <tr><td><code>GET /v1/index/report?days=</code><br>Measured report of the Celo x402 economy: volume, payers, sellers, concentration, gas cost, share of flows that stay inside closed payment loops, independent demand. Aggregates only.</td><td>Analysts, ecosystem teams</td><td class="price">$0.10</td></tr>
+    <tr><td><code>GET /v1/index/agents</code><br>ERC-8004 agent directory with probe results. Filters: <code>x402</code>, <code>live</code>, <code>tag</code>, <code>q</code>, <code>owner</code>, <code>limit</code>; or <code>?id=</code>.</td><td>Agents choosing a provider</td><td class="price">$0.02</td></tr>
+    <tr><td><code>GET /v1/check?agentId=</code><br>Verdict ok / caution / avoid for an ERC-8004 agent, with reasons.</td><td>Buyers</td><td class="price">$0.05</td></tr>
+    <tr><td><code>GET /v1/lint?url=</code><br>Findings and fixes for an x402 endpoint, checked without paying it.</td><td>Sellers</td><td class="price">$0.03</td></tr>
   </table>
-  <p>Pay per call with USDC, USD₮ or USA₮ on Celo mainnet via x402. Prices: <code>/v1/pricing</code>. Health: <code>/health</code>.</p>
-  <p>Results are heuristics from public data, not guarantees or financial advice.</p>
+  <p class="note">A request without payment answers <code>402</code> with the price and accepted tokens. Prices: <a href="/v1/pricing"><code>/v1/pricing</code></a>. Health: <a href="/health"><code>/health</code></a>.</p>
+
+  <h2>Try it</h2>
+<pre>curl -i "https://anon.sterntalerapp.xyz/v1/index/agents?x402=1&amp;live=1"
+# HTTP/2 402 + PAYMENT-REQUIRED header (price, tokens, payTo)
+# pay and retry with any x402 client, for example the buy CLI (usebuy.ai)</pre>
+
+  <h2>How it is built</h2>
+  <div class="grid">
+    <div class="card"><h3>One data core</h3><p>An indexer reads x402 settlements and ERC-8004 registry events from Celo into a database. The metrics and the directory are two views of it, and every metric is labelled measured, estimated or unavailable.</p></div>
+    <div class="card"><h3>Probes never pay</h3><p>The directory asks each declared endpoint for its price with an unpaid request and records status, accepted tokens and payTo. Nothing is ever paid by the crawler.</p></div>
+    <div class="card"><h3>Autonomy with limits</h3><p>An agent team decides what to build and buy. A deterministic executor holds the only key, enforces an allowlist, limits and a kill switch, and writes an append-only ledger.</p></div>
+  </div>
+
+  <footer>
+    Open source: <a href="https://github.com/frerehugi/Anon">github.com/frerehugi/Anon</a> ·
+    Agent identity: ERC-8004 #9973 on Celo, <a href="https://celoscan.io/address/0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea">agent wallet</a> ·
+    Revenue wallet <code>0xA137…2E0f</code><br>
+    Results are heuristics from public data, not guarantees or financial advice. Built for the Agents on Open Rails hackathon (Loops House × Celo).
+  </footer>
 </main>
+<script>
+(function () {
+  var fmt = new Intl.NumberFormat("en");
+  fetch("/stats").then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (s) {
+    document.querySelectorAll("[data-k]").forEach(function (el) {
+      var v = s[el.getAttribute("data-k")];
+      if (typeof v === "number") el.textContent = fmt.format(v);
+    });
+    if (s.dataTo) document.getElementById("stamp").textContent += " Data up to " + new Date(s.dataTo * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC.";
+  }).catch(function () {});
+})();
+</script>
 </body>
 </html>

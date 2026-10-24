@@ -76,3 +76,19 @@ test("Index routes exist only when configured; bad input is 400 before any payme
     assert.equal((await fetch(`${b}/v1/index/report`)).status, 404);
   });
 });
+
+test("/stats is public, exposes aggregates only and exists only with INDEX_URL", async () => {
+  const health = { cursorBlock: 5, settlements: 10, dataFrom: 1, dataTo: 2, lastRun: { error: "secret detail" }, directory: { agents: 3, declaredX402: 2, endpointsProbed: 4, endpointsPassing: 1, agentsLive: 1, bulkOwners: { agents: 99 } } };
+  const calls: string[] = [];
+  const fakeFetch: typeof fetch = async (input) => { calls.push(String(input)); return new Response(JSON.stringify(health), { status: 200 }); };
+  await withServer({ DEV_UNPAID: "1" }, fakeFetch, async (b) => { assert.equal((await fetch(`${b}/stats`)).status, 404); });
+  await withServer({ DEV_UNPAID: "1", INDEX_URL: "https://idx.example" }, fakeFetch, async (b) => {
+    const r = await fetch(`${b}/stats`);
+    assert.equal(r.status, 200);
+    const j = await r.json();
+    assert.deepEqual(Object.keys(j).sort(), ["agentsDeclaringX402", "agentsIndexed", "agentsLive", "cursorBlock", "dataFrom", "dataTo", "endpointsPassing", "endpointsProbed", "settlementsIndexed"]);
+    assert.equal(j.settlementsIndexed, 10);
+    assert.doesNotMatch(JSON.stringify(j), /secret|bulk/);
+    assert.deepEqual(calls, ["https://idx.example/health"]); // no token sent
+  });
+});
