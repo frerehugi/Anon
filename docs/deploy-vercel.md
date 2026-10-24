@@ -27,6 +27,8 @@ answer `402` directly (a `308` would hide the challenge from agents and indexes)
    BASE_URL=https://<your-deployment> EXPECTED_PAY_TO=0x<revenue wallet> npm run smoke
    ```
 
+Production domain: `https://anon.sterntalerapp.xyz` (subdomain of a domain whose DNS is managed on Vercel, added under *Settings → Domains*; the Vercel address `anon-frerehugi1.vercel.app` keeps working). The agent card lists this origin (`API_ORIGIN` in `src/agentCard.ts`).
+
 ## Endpoints and prices (USD, USDC/USDT/USAT)
 
 | Route | Price | Returns |

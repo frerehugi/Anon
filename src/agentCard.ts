@@ -36,7 +36,7 @@ export function toDataUri(card: AgentCard): string {
 }
 
 /** Public origin of the live API (Vercel). Change it together with a setAgentURI when a custom domain replaces it. */
-export const API_ORIGIN = "https://anon-frerehugi1.vercel.app";
+export const API_ORIGIN = "https://anon.sterntalerapp.xyz";
 
 /**
  * The paid routes, as the registry directory should list them. Each URL must answer an unpaid request with a 402,
