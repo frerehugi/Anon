@@ -24,6 +24,8 @@ export async function directoryCommand(sub: string | undefined, args: string[]):
       for (let i = 0; i < maxCycles; i++) {
         const r = await runDirectoryCycle(db, { registry, fetcher: nodeFetcher }, {
           maxWindows: 50, maxRequests: 400, maxRetries: 8, backoffMs: 1000, maxStatements: 20_000,
+          windowBlocks: Number(flag(args, "--window-blocks") ?? 150_000), // registry events are sparse; a window that is too big shrinks by itself
+
           maxFetches: Number(flag(args, "--fetches") ?? 50), maxProbes: Number(flag(args, "--probes") ?? 50), concurrency: 4,
         });
         last = r;
