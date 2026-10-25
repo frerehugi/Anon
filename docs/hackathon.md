@@ -43,3 +43,9 @@ Winners announced 2026-11-13.
   deployment (Vercel) and paid 0.03 USDC. Tx `0x220f93fc4fe29fb8325c3e8e81b8f31dfc209a4e1519803bfd94bc9340450a91`, block 80437591, status success.
   Checked on chain: USDC `Transfer` from the agent wallet `0x3880…e1ea` to the Anon revenue wallet `0xA137…2E0f`, 0.03; submitted by the Celo
   facilitator signer. Proves that settlement completes on serverless. Own traffic: `independent = n`, it does not count as customer demand.
+- **2026-10-25, settlement audit through buy (Build with buy):** the executor paid 0.01 USDC to the buy gateway for one Chainstack Celo JSON-RPC batch
+  (100 `eth_getTransactionReceipt` calls) and re-checked a random sample of 100 indexed x402 settlements against the receipts: transaction status, block,
+  the `Transfer` log at the recorded index, token contract, payer, payTo and amount. Result: 100 of 100 matched, 0 mismatches, 0 inconclusive, 0 RPC errors.
+  Payment tx `0x2157437da0879bbb00a55055d3f0598340c13f937d94dc7283f45a4a855c809f`, block 81042498, status success; checked on chain: USDC `Transfer` from the
+  agent wallet to the buy gateway `payTo`, 0.01. Why it is not spam: the call has a purpose (an independent check of our own data), it is bounded by the
+  policy (allowlist, approval `audit`, 0.20 cap), and the result goes into the audit report. Sample size 100 of about 34,000 indexed settlements.
