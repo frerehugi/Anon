@@ -11,6 +11,7 @@ import { nodeFetcher } from "./safeFetch.js";
 import { ANON_AGENT_WALLET } from "./constants.js";
 import { privateKeyToAccount } from "viem/accounts";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { runEnrich } from "./buyjobs/enrichRun.js";
 import { auditSample, parseReceipts, receiptBatch, type SettlementRef } from "./buyjobs/audit.js";
 
 const flag = (args: string[], name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
@@ -32,7 +33,7 @@ export async function executorCommand(sub: string | undefined, args: string[]): 
   const gatesFile = join(decisionsDir, "gates.json");
   const policy = parsePolicy(readFileSync(join(policyDir, "limits.yaml"), "utf8"), readFileSync(join(policyDir, "allowlist.yaml"), "utf8"));
   let signer: X402Signer | undefined;
-  if ((sub === "run" || sub === "audit") && args.includes("--live")) {
+  if ((sub === "run" || sub === "audit" || sub === "enrich") && args.includes("--live")) {
     const key = process.env.AGENT_PRIVATE_KEY;
     if (!key || !/^0x[0-9a-fA-F]{64}$/.test(key)) throw new Error("AGENT_PRIVATE_KEY (0x + 64 hex) is required in the environment for --live");
     const account = privateKeyToAccount(key as `0x${string}`);
@@ -52,6 +53,17 @@ export async function executorCommand(sub: string | undefined, args: string[]): 
     if (sub === "check") return await ex.check(req);
     const res = await ex.execute(req, { dryRun: sub === "dry-run" || !args.includes("--live") });
     return { ...res, body: res.body?.slice(0, 2000) };
+  }
+  if (sub === "enrich") {
+    // On-chain facts for directory agents (owner, agent wallet, raw reputation), read through Chainstack paid via buy, stored in the indexer.
+    const readToken = process.env.INDEX_READ_TOKEN;
+    if (!readToken) throw new Error("INDEX_READ_TOKEN is required in the environment");
+    return await runEnrich(ex, nodeFetcher, {
+      indexUrl: (flag(args, "--index-url") ?? process.env.INDEX_URL ?? "https://anon-indexer.frerehugi.workers.dev").replace(/\/+$/, ""),
+      readToken, writeToken: process.env.INDEX_WRITE_TOKEN, scope: flag(args, "--scope") === "all" ? "all" : "x402",
+      limit: Math.min(20_000, Math.max(1, Number(flag(args, "--limit") ?? 1000))), staleHours: Number(flag(args, "--stale-hours") ?? 24),
+      live: args.includes("--live"), approvalId: flag(args, "--approval") ?? "enrich",
+    });
   }
   if (sub === "audit") {
     // Re-check a random sample of indexed settlements against Chainstack, paid through buy (one JSON-RPC batch, 0.01 USDC).
@@ -102,5 +114,5 @@ export async function executorCommand(sub: string | undefined, args: string[]): 
     for (const r of reqs) byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
     return { requests: reqs.length, byStatus, spent: formatAtomic(spentTotal(all)), live: false };
   }
-  throw new Error("usage: executor check|dry-run|run <request.json> [--live] | audit [--n 100] [--live] | status [--policy dir] [--decisions dir] [--ledger file]");
+  throw new Error("usage: executor check|dry-run|run <request.json> [--live] | audit [--n 100] [--live] | enrich [--scope x402|all] [--limit N] [--live] | status [--policy dir] [--decisions dir] [--ledger file]");
 }

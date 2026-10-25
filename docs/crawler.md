@@ -32,3 +32,9 @@ The historic backfill (about 20,000 events) is done locally and imported with th
 
 First local run on the real registry (2026-10-16): 9,964 agents; about 89% belong to six owners with 50+ registrations; 63 declare x402; of 272 candidate endpoints, 18 pass the unpaid probe.
 Numbers move with every run and are not published as results before they are re-measured.
+
+## On-chain facts (enrichment)
+
+Registration data says what an agent claims. The enrichment job adds what the chain says now: the current NFT owner (`chain.ownerChanged` is true if it is not the registrant),
+the agent wallet, and raw reputation (`rawClients`, `rawCount`, `rawValue`, `decimals`). The job runs from the executor and pays for its RPC reads through buy
+(see `executor/README.md`). The Worker only stores and serves the rows.

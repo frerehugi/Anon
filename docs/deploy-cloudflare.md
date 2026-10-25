@@ -56,3 +56,12 @@ npx wrangler d1 execute anon-index --remote --file anon-directory-dump.sql
 ```
 
 Import before the first directory cron run. Read API: `GET /v1/agents`, `/v1/agents/:id` with `Authorization: Bearer <READ_TOKEN>`. Details: `docs/crawler.md`.
+
+## Enrichment (migration 0003 and the write token)
+
+```sh
+npx wrangler d1 migrations apply anon-index --remote     # adds the agent_chain table
+npx wrangler secret put WRITE_TOKEN                      # a second, different secret; only the executor's enrichment job uses it
+npx wrangler deploy
+```
+`WRITE_TOKEN` is separate from `READ_TOKEN` on purpose: reading the report must not allow writing. Without it, the ingest route answers 503.

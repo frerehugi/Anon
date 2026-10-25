@@ -6,6 +6,7 @@ import { runCycle } from "../src/indexer/cycle.js";
 import { SqdSource } from "../src/indexer/sqd.js";
 import { buildReport, status } from "../src/indexer/report.js";
 import { sampleSettlements } from "../src/indexer/store.js";
+import { agentIdsToCheck, chainStatements, parseChainRows } from "../src/directory/chain.js";
 import { parseConfig, type IndexerEnv } from "../src/indexer/config.js";
 import { runDirectoryCycle } from "../src/directory/crawler.js";
 import { SqdRegistrySource } from "../src/directory/registrySource.js";
@@ -15,6 +16,7 @@ import { edgeFetcher } from "../src/net.js";
 interface Env extends IndexerEnv {
   DB: D1DatabaseLike;
   READ_TOKEN?: string;
+  WRITE_TOKEN?: string; // separate from READ_TOKEN: only the executor's enrichment job writes
   CELO_USD?: string;
 }
 
@@ -37,6 +39,12 @@ function authorized(req: Request, env: Env): Response | null {
   if (!env.READ_TOKEN) return json({ error: "not configured" }, 503); // fail closed
   const auth = req.headers.get("authorization") ?? "";
   return safeEqual(auth, `Bearer ${env.READ_TOKEN}`) ? null : json({ error: "unauthorized" }, 401);
+}
+
+function authorizedWrite(req: Request, env: Env): Response | null {
+  if (!env.WRITE_TOKEN) return json({ error: "not configured" }, 503); // fail closed
+  const auth = req.headers.get("authorization") ?? "";
+  return safeEqual(auth, `Bearer ${env.WRITE_TOKEN}`) ? null : json({ error: "unauthorized" }, 401);
 }
 
 const json = (body: unknown, status = 200) =>
@@ -70,6 +78,18 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const db = new D1Db(env.DB);
+    if (req.method === "POST" && url.pathname === "/v1/ingest/agent-chain") {
+      const denied = authorizedWrite(req, env);
+      if (denied) return denied;
+      const text = await req.text();
+      if (text.length > 200_000) return json({ error: "body too large" }, 413);
+      let payload: unknown;
+      try { payload = JSON.parse(text); } catch { return json({ error: "invalid json" }, 400); }
+      const parsed = parseChainRows((payload as { rows?: unknown })?.rows, Math.floor(Date.now() / 1000));
+      if (!parsed.ok) return json({ error: parsed.error }, 400);
+      await db.batch(chainStatements(parsed.rows));
+      return json({ stored: parsed.rows.length });
+    }
     if (req.method !== "GET") return json({ error: "method not allowed" }, 405);
 
     if (url.pathname === "/health") return json({ ...(await status(db)), directory: await directoryStats(db) });
@@ -86,9 +106,17 @@ export default {
       const q = url.searchParams;
       const num = (k: string) => (q.has(k) && Number.isFinite(Number(q.get(k))) ? Number(q.get(k)) : undefined);
       return json(await listAgents(db, {
-        x402: q.get("x402") === "1", live: q.get("live") === "1", tag: q.get("tag")?.slice(0, 40) || undefined, q: q.get("q")?.slice(0, 80) || undefined,
+        x402: q.get("x402") === "1", live: q.get("live") === "1", rated: q.get("rated") === "1", tag: q.get("tag")?.slice(0, 40) || undefined, q: q.get("q")?.slice(0, 80) || undefined,
         owner: /^0x[0-9a-fA-F]{40}$/.test(q.get("owner") ?? "") ? q.get("owner")! : undefined, order: q.get("order") === "id" ? "id" : "recent", limit: num("limit"), offset: num("offset"),
       }));
+    }
+
+    if (url.pathname === "/v1/agent-ids") {
+      const denied = authorized(req, env);
+      if (denied) return denied;
+      const num = (k: string, d: number) => { const v = Number(url.searchParams.get(k) ?? d); return Number.isFinite(v) && v >= 0 ? v : d; };
+      const ids = await agentIdsToCheck(db, { scope: url.searchParams.get("scope") === "all" ? "all" : "x402", staleBefore: num("stale_before", 0), after: num("after", 0), limit: num("limit", 1000) });
+      return json({ ids });
     }
 
     if (url.pathname === "/v1/audit/sample") {

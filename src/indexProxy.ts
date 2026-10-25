@@ -27,7 +27,7 @@ export function parseAgentsQuery(q: Record<string, unknown>): ParseResult {
     return { ok: true, value: { path: `/v1/agents/${id}`, search: "" } };
   }
   const p = new URLSearchParams();
-  for (const flag of ["x402", "live"] as const) {
+  for (const flag of ["x402", "live", "rated"] as const) {
     if (q[flag] !== undefined) {
       if (q[flag] !== "1" && q[flag] !== "0") return { ok: false, error: `${flag} must be 0 or 1` };
       if (q[flag] === "1") p.set(flag, "1");

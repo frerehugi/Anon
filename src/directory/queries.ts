@@ -31,12 +31,22 @@ export interface DirectoryEntry {
   services: { name?: string; endpoint: string; version?: string }[];
   x402Status: X402Status;
   endpoints: EndpointEntry[];
+  /** On-chain facts read through a paid RPC, or null if the agent has not been checked yet. Reputation values are raw and can be padded. */
+  chain: {
+    checkedAt: number;
+    checkedBlock: number | null;
+    ownerNow: string | null;
+    ownerChanged: boolean | null; // current NFT owner differs from the registering owner
+    agentWallet: string | null;
+    reputation: { rawClients: number | null; rawCount: number | null; rawValue: string | null; decimals: number | null };
+  } | null;
 }
 
 interface AgentRow {
   agent_id: number; owner: string; owner_agents: number; reg_ts: number | null; reg_status: string; reg_error: string | null;
   name: string | null; description: string | null; x402_support: number | null; active: number | null; coherent: number | null;
   services_json: string | null; tags_json: string | null;
+  c_checked_at: number | null; c_block: number | null; c_owner: string | null; c_wallet: string | null; c_clients: number | null; c_count: number | null; c_value: string | null; c_decimals: number | null;
 }
 interface EndpointRow {
   agent_id: number; url: string; declared_x402: number; last_pass: number | null; last_status: number | null; last_error_codes: string | null;
@@ -66,12 +76,17 @@ function toEntry(a: AgentRow, eps: EndpointRow[]): DirectoryEntry {
     x402Support: a.x402_support === null ? null : a.x402_support === 1, active: a.active === null ? null : a.active === 1,
     registrationCoherent: a.coherent === null ? null : a.coherent === 1, registrationStatus: a.reg_status, registrationError: a.reg_error,
     registeredAt: a.reg_ts, services: arr(a.services_json), x402Status: x402StatusOf(a, endpoints), endpoints,
+    chain: a.c_checked_at === null ? null : {
+      checkedAt: a.c_checked_at, checkedBlock: a.c_block, ownerNow: a.c_owner, ownerChanged: a.c_owner === null ? null : a.c_owner !== a.owner.toLowerCase(),
+      agentWallet: a.c_wallet, reputation: { rawClients: a.c_clients, rawCount: a.c_count, rawValue: a.c_value, decimals: a.c_decimals },
+    },
   };
 }
 
 export interface AgentFilters {
   x402?: boolean; // declares x402 or has a payment-looking endpoint
   live?: boolean; // at least one endpoint passed its last probe
+  rated?: boolean; // at least one raw reputation entry on chain
   tag?: string;
   q?: string;
   owner?: string;
@@ -81,7 +96,9 @@ export interface AgentFilters {
 }
 
 const BASE_SELECT = `SELECT a.agent_id, a.owner, a.reg_ts, a.reg_status, a.reg_error, a.name, a.description, a.x402_support, a.active, a.coherent, a.services_json, a.tags_json,
-  (SELECT COUNT(*) FROM agents b WHERE b.owner = a.owner) AS owner_agents FROM agents a`;
+  (SELECT COUNT(*) FROM agents b WHERE b.owner = a.owner) AS owner_agents,
+  c.checked_at AS c_checked_at, c.checked_block AS c_block, c.owner_now AS c_owner, c.agent_wallet AS c_wallet, c.rep_clients AS c_clients, c.rep_count AS c_count, c.rep_value AS c_value, c.rep_decimals AS c_decimals
+  FROM agents a LEFT JOIN agent_chain c ON c.agent_id = a.agent_id`;
 
 const like = (s: string) => `%${s.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
@@ -90,6 +107,7 @@ export async function listAgents(db: Db, f: AgentFilters = {}): Promise<{ total:
   const params: unknown[] = [];
   if (f.x402) where.push("(a.x402_support = 1 OR EXISTS (SELECT 1 FROM endpoints e WHERE e.agent_id = a.agent_id))");
   if (f.live) where.push("EXISTS (SELECT 1 FROM endpoints e WHERE e.agent_id = a.agent_id AND e.last_pass = 1)");
+  if (f.rated) where.push("EXISTS (SELECT 1 FROM agent_chain c2 WHERE c2.agent_id = a.agent_id AND c2.rep_count > 0)");
   if (f.tag) { where.push("a.tags_json LIKE ? ESCAPE '\\'"); params.push(like(`"${f.tag}"`)); }
   if (f.q) { where.push("(a.name LIKE ? ESCAPE '\\' OR a.description LIKE ? ESCAPE '\\')"); params.push(like(f.q), like(f.q)); }
   if (f.owner) { where.push("a.owner = ?"); params.push(f.owner.toLowerCase()); }
@@ -127,6 +145,9 @@ export interface DirectoryStats {
   active: { yes: number; no: number; undeclared: number };
   coherent: number;
   pendingFetches: number;
+  chainChecked: number; // agents with on-chain facts
+  withReputation: number; // raw count > 0
+  ownerChanged: number; // current NFT owner differs from the registrant
 }
 
 export async function directoryStats(db: Db, bulkThreshold = 50): Promise<DirectoryStats> {
@@ -148,5 +169,8 @@ export async function directoryStats(db: Db, bulkThreshold = 50): Promise<Direct
     active: { yes: await one("SELECT COUNT(*) AS c FROM agents WHERE active = 1"), no: await one("SELECT COUNT(*) AS c FROM agents WHERE active = 0"), undeclared: await one("SELECT COUNT(*) AS c FROM agents WHERE active IS NULL") },
     coherent: await one("SELECT COUNT(*) AS c FROM agents WHERE coherent = 1"),
     pendingFetches: await one("SELECT COUNT(*) AS c FROM agents WHERE reg_status = 'pending'"),
+    chainChecked: await one("SELECT COUNT(*) AS c FROM agent_chain"),
+    withReputation: await one("SELECT COUNT(*) AS c FROM agent_chain WHERE rep_count > 0"),
+    ownerChanged: await one("SELECT COUNT(*) AS c FROM agent_chain c JOIN agents a ON a.agent_id = c.agent_id WHERE c.owner_now IS NOT NULL AND c.owner_now <> LOWER(a.owner)"),
   };
 }
