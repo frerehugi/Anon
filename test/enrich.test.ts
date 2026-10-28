@@ -71,6 +71,9 @@ test("ingest rows are validated strictly and written as bounded upserts", () => 
 });
 
 import { runEnrich } from "../src/buyjobs/enrichRun.js";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { Executor } from "../src/executor/executor.js";
 import type { Fetcher } from "../src/net.js";
 
@@ -107,7 +110,7 @@ function fakeSetup(opts: { deny?: boolean } = {}) {
   };
   return { ex, f, requests, ingested };
 }
-const base = { indexUrl: "https://idx.example", readToken: "r", scope: "x402" as const, limit: 100, staleHours: 24, approvalId: "enrich", now: () => new Date("2026-10-26T10:00:00Z") };
+const base = { indexUrl: "https://idx.example", readToken: "r", scope: "x402" as const, limit: 100, staleHours: 24, approvalId: "enrich", now: () => new Date("2026-10-26T10:00:00Z"), reportDir: mkdtempSync(join(tmpdir(), "enrich-report-")) }; // tests never write into the repo
 
 test("enrich dry run: plans and checks policy, pays and stores nothing", async () => {
   const s = fakeSetup();

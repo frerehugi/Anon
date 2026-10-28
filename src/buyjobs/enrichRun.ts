@@ -18,6 +18,7 @@ export interface EnrichOpts {
   live: boolean;
   approvalId: string;
   now?: () => Date;
+  reportDir?: string; // where the run report is written (default loop/audits)
 }
 
 const hdr = (t: string) => ({ authorization: `Bearer ${t}` });
@@ -89,8 +90,9 @@ export async function runEnrich(ex: Executor, f: Fetcher, o: EnrichOpts): Promis
     }
   }
   const report = { date: start.toISOString(), source: "Chainstack Celo RPC, paid through buy (x402)", scope: o.scope, agentsChecked: ids.length, stored, withReputation, unreadable, rpcErrors, payments };
-  mkdirSync("loop/audits", { recursive: true });
-  const file = `loop/audits/${start.toISOString().slice(0, 10)}-directory-enrichment-${stamp.slice(-6)}.json`;
+  const dir = o.reportDir ?? "loop/audits";
+  mkdirSync(dir, { recursive: true });
+  const file = `${dir}/${start.toISOString().slice(0, 10)}-directory-enrichment-${stamp.slice(-6)}.json`;
   writeFileSync(file, JSON.stringify(report, null, 2) + "\n");
   return { ...report, paymentsCount: payments.length, payments: undefined, file, ownerChanged };
 }
