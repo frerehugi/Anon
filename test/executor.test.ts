@@ -52,7 +52,7 @@ test("method and body rules", () => {
   assert.equal(reasons(req({ method: "POST", body: "{}" })), "");
   assert.match(reasons(req({ method: "GET", body: "{}" })), /body/);
   assert.match(reasons(req({ body: "{}" })), /body/);
-  assert.match(reasons(req({ method: "POST", body: "x".repeat(1_000_001) })), /body/);
+  assert.match(reasons(req({ method: "POST", body: "x".repeat(125_001) })), /body/);
   assert.match(reasons(req({ method: "PUT" as never })), /GET or POST/);
 });
 

@@ -12,13 +12,13 @@ const reputationAbi = parseAbi([
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 export const MAX_CALLS_PER_BATCH = 2000;
-/** Stage A has 3 calls per agent plus one block-number call. */
-export const AGENTS_PER_BATCH = 600;
+/** Stage A has 3 calls per agent plus one block-number call. The buy gateway rejects bodies of about 150 KB and more (HTTP 413; 200 agents, 122 KB, still passed), so a batch stays near 110 KB. */
+export const AGENTS_PER_BATCH = 180;
 /** Summaries over huge client lists are skipped: the calldata grows with the list and the raw number says little there. */
 export const MAX_CLIENTS_FOR_SUMMARY = 500;
 export const SUMMARIES_PER_BATCH = 100;
 /** A summary call carries its client list as calldata (64 hex characters per address); batches are split to stay under this many characters. */
-export const MAX_BATCH_CHARS = 900_000;
+export const MAX_BATCH_CHARS = 110_000;
 
 type Kind = "owner" | "wallet" | "clients" | "block" | "summary";
 export interface CallMeta { id: number; agentId: number; kind: Kind }

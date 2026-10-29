@@ -84,12 +84,12 @@ in the indexer (`agent_chain`, shown as `chain` in `/v1/agents`, filter `rated=1
 INDEX_READ_TOKEN, INDEX_WRITE_TOKEN   # entered without echo; the write token is a separate secret of the Worker (WRITE_TOKEN)
 npm run cli -- executor enrich --scope x402                 # dry run: plan, estimated cost, policy decision
 AGENT_PRIVATE_KEY=0x... npm run cli -- executor enrich --scope x402 --live
-npm run cli -- executor enrich --scope all --live            # every agent in the directory (about 10,000: roughly 17 to 40 batches, 0.17 to 0.40 USDC)
+npm run cli -- executor enrich --scope all --live            # every agent in the directory (about 10,000: roughly 56 stage A batches plus the summary batches, about 0.6 to 1.2 USDC)
 ```
 
-- Needs `examples/approval-enrich.json` (cap 0.40) in `loop/decisions/`, migration `0003`, and the Worker routes `GET /v1/agent-ids` (read token) and
+- Needs `examples/approval-enrich.json` (cap 1.20) in `loop/decisions/`, migration `0003`, and the Worker routes `GET /v1/agent-ids` (read token) and
   `POST /v1/ingest/agent-chain` (write token, at most 500 rows, strict validation).
-- Stage A (3 calls per agent: `ownerOf`, `getAgentWallet`, `getClients`, 600 agents per batch) and stage B (`getSummary` for agents that have clients, 100 per batch).
+- Stage A (3 calls per agent: `ownerOf`, `getAgentWallet`, `getClients`, 180 agents per batch, because the gateway rejects bodies of about 150 KB) and stage B (`getSummary` for agents that have clients, 100 per batch and at most 110 KB).
   Each chunk is self-contained: it is paid, parsed and stored before the next one starts, so a stop loses at most one batch. Agents checked within `--stale-hours` (default 24) are skipped.
 - Reputation is shown raw and labelled so: anyone can add feedback, and a single client can contribute many entries (agent 9903 has 179 entries from one client).
   `rawClients` next to `rawCount` makes that visible. It is a signal, not a rating.

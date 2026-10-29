@@ -19,8 +19,8 @@ export interface PayRequest {
   maxResponseBytes?: number;
 }
 
-/** Large enough for a JSON-RPC batch of 600 agents (stage A is about 340 KB); the allowlist, not this cap, decides where a body may go. */
-export const MAX_REQUEST_BODY = 1_000_000;
+/** Just under what the buy gateway accepts (it answers 413 from about 150 KB); the allowlist, not this cap, decides where a body may go. */
+export const MAX_REQUEST_BODY = 125_000;
 
 export interface LedgerEntry {
   requestId: string;
