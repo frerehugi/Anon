@@ -148,6 +148,18 @@ export interface DirectoryStats {
   chainChecked: number; // agents with on-chain facts
   withReputation: number; // raw count > 0
   ownerChanged: number; // current NFT owner differs from the registrant
+  reputation: ReputationStats;
+}
+
+/** Aggregates over the raw ERC-8004 reputation of the checked agents. Anyone can add feedback, so the number of distinct clients is what to look at, not the entry count. */
+export interface ReputationStats {
+  withEntries: number;
+  byDistinctClients: { one: number; twoToFour: number; fiveToNineteen: number; twentyOrMore: number };
+  /** Entries of the agents with exactly one client: many entries from one client is the padding pattern. */
+  singleClientEntries: number;
+  declaredX402: { checked: number; withEntries: number; moreThanOneClient: number };
+  bulkOwners: { checked: number; withEntries: number; moreThanOneClient: number; ownerChanged: number };
+  otherOwners: { checked: number; withEntries: number; moreThanOneClient: number; ownerChanged: number };
 }
 
 export async function directoryStats(db: Db, bulkThreshold = 50): Promise<DirectoryStats> {
@@ -172,5 +184,29 @@ export async function directoryStats(db: Db, bulkThreshold = 50): Promise<Direct
     chainChecked: await one("SELECT COUNT(*) AS c FROM agent_chain"),
     withReputation: await one("SELECT COUNT(*) AS c FROM agent_chain WHERE rep_count > 0"),
     ownerChanged: await one("SELECT COUNT(*) AS c FROM agent_chain c JOIN agents a ON a.agent_id = c.agent_id WHERE c.owner_now IS NOT NULL AND c.owner_now <> LOWER(a.owner)"),
+    reputation: await reputationStats(db, bulkThreshold),
+  };
+}
+
+async function reputationStats(db: Db, bulkThreshold: number): Promise<ReputationStats> {
+  const rated = "c.rep_count > 0";
+  const bulkOwners = "SELECT owner FROM agents GROUP BY owner HAVING COUNT(*) >= ?";
+  const one = async (sql: string, p: unknown[] = []) => (await db.all<{ c: number }>(sql, p))[0]?.c ?? 0;
+  const bucket = (lo: number, hi: number) => one(`SELECT COUNT(*) AS c FROM agent_chain c WHERE ${rated} AND c.rep_clients >= ${lo} AND c.rep_clients <= ${hi}`);
+  const group = async (where: string, p: unknown[]) => ({
+    checked: await one(`SELECT COUNT(*) AS c FROM agent_chain c JOIN agents a ON a.agent_id = c.agent_id WHERE ${where}`, p),
+    withEntries: await one(`SELECT COUNT(*) AS c FROM agent_chain c JOIN agents a ON a.agent_id = c.agent_id WHERE ${where} AND ${rated}`, p),
+    moreThanOneClient: await one(`SELECT COUNT(*) AS c FROM agent_chain c JOIN agents a ON a.agent_id = c.agent_id WHERE ${where} AND ${rated} AND c.rep_clients > 1`, p),
+  });
+  const changed = (where: string, p: unknown[]) => one(`SELECT COUNT(*) AS c FROM agent_chain c JOIN agents a ON a.agent_id = c.agent_id WHERE ${where} AND c.owner_now IS NOT NULL AND c.owner_now <> LOWER(a.owner)`, p);
+  const inBulk = `a.owner IN (${bulkOwners})`;
+  const notBulk = `a.owner NOT IN (${bulkOwners})`;
+  return {
+    withEntries: await one(`SELECT COUNT(*) AS c FROM agent_chain c WHERE ${rated}`),
+    byDistinctClients: { one: await bucket(1, 1), twoToFour: await bucket(2, 4), fiveToNineteen: await bucket(5, 19), twentyOrMore: await bucket(20, 1_000_000_000) },
+    singleClientEntries: await one(`SELECT COALESCE(SUM(c.rep_count), 0) AS c FROM agent_chain c WHERE ${rated} AND c.rep_clients = 1`),
+    declaredX402: await group("a.x402_support = 1", []),
+    bulkOwners: { ...(await group(inBulk, [bulkThreshold])), ownerChanged: await changed(inBulk, [bulkThreshold]) },
+    otherOwners: { ...(await group(notBulk, [bulkThreshold])), ownerChanged: await changed(notBulk, [bulkThreshold]) },
   };
 }

@@ -5,6 +5,7 @@ import { decodeAbiString, parseRegistryLines, REGISTERED_TOPIC, URI_UPDATED_TOPI
 import { eventStatements } from "../src/directory/store.js";
 import { processPending, runProbes, runRegistryCycle, trimWindow } from "../src/directory/crawler.js";
 import { directoryStats, getAgent, listAgents } from "../src/directory/queries.js";
+import { chainStatements } from "../src/directory/chain.js";
 import type { RegistrySource, RegistryWindow } from "../src/directory/registrySource.js";
 import type { Fetcher } from "../src/net.js";
 import { RetryableSourceError } from "../src/indexer/types.js";
@@ -185,5 +186,24 @@ test("queries: filters, owner context, bulk stats", async () => {
   assert.equal(st.bulkOwners.agents, 5);
   assert.equal(st.agentsLive, 1);
   assert.equal(st.distinctOwners, 2);
+  db.close();
+});
+
+test("reputation stats: distinct clients, bulk owners and owner changes", async () => {
+  const db = freshDb();
+  const bulk = "0x" + "b".repeat(40);
+  for (let i = 1; i <= 5; i++) await db.batch(eventStatements(ev("registered", i, dataUri({ name: `Bulk ${i}`, description: "x", services: [] }), 10 + i, bulk), 1000));
+  await db.batch(eventStatements(ev("registered", 6, dataUri(regFile({ name: "Solo" })), 50), 1000));
+  const row = (agentId: number, repClients: number, repCount: number, ownerNow: string | null) => ({ agentId, checkedAt: 1, checkedBlock: 1, ownerNow, agentWallet: null, repClients, repCount, repValue: "0", repDecimals: 0 });
+  await db.batch(chainStatements([
+    row(1, 1, 50, bulk), row(2, 3, 3, bulk), row(3, 25, 40, "0x" + "c".repeat(40)), row(4, 0, 0, bulk), row(6, 2, 2, "0x" + "d".repeat(40)),
+  ]));
+  const r = (await directoryStats(db, 5)).reputation;
+  assert.equal(r.withEntries, 4);
+  assert.deepEqual(r.byDistinctClients, { one: 1, twoToFour: 2, fiveToNineteen: 0, twentyOrMore: 1 });
+  assert.equal(r.singleClientEntries, 50);
+  assert.deepEqual(r.bulkOwners, { checked: 4, withEntries: 3, moreThanOneClient: 2, ownerChanged: 1 });
+  assert.deepEqual(r.otherOwners, { checked: 1, withEntries: 1, moreThanOneClient: 1, ownerChanged: 1 });
+  assert.deepEqual(r.declaredX402, { checked: 1, withEntries: 1, moreThanOneClient: 1 });
   db.close();
 });
