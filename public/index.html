@@ -33,6 +33,21 @@
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; }
   .card h3 { margin:0 0 .35rem; font-size:1rem; }
   .card p { margin:0; color:var(--muted); font-size:.92rem; }
+  .hero { container-type:inline-size; position:relative; margin:0 0 1.5rem; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:#1a1530; }
+  .hero img { display:block; width:100%; height:auto; }
+  .panel { color:#e8f4f7; font-variant-numeric:tabular-nums; }
+  .panel h2 { margin:0; font-size:1rem; }
+  .panel p { margin:0; }
+  .panel .row { display:flex; justify-content:space-between; gap:.75rem; border-top:1px solid rgba(160,220,235,.25); padding:.25rem 0; }
+  .panel .row b { font-weight:600; }
+  .panel .sub { color:#a9c7d0; }
+  @container (min-width: 600px) {
+    .panel { position:absolute; left:61%; top:39%; width:27%; height:37%; padding:0; display:flex; flex-direction:column; justify-content:center; font-size:1.55cqw; line-height:1.3; transform:rotate(.6deg); }
+    .panel h2 { font-size:2.1cqw; }
+  }
+  @container (max-width: 599px) {
+    .panel { background:#10182a; padding:1rem; font-size:.9rem; }
+  }
   footer { margin-top:3rem; color:var(--muted); font-size:.85rem; }
   @media (max-width:520px) { th:nth-child(2), td:nth-child(2) { display:none; } }
 </style>
@@ -45,6 +60,20 @@
     <span class="chip">Celo mainnet</span><span class="chip">x402 via Celo facilitator</span><span class="chip">USDC · USD₮ · USA₮</span><span class="chip">ERC-8004 agent #9973</span>
   </div>
 
+  <div class="hero">
+    <img src="/anon.jpg" width="1179" height="782" alt="Anon, a small white robot cat in a black hoodie, sits at a desk of monitors">
+    <div class="panel" id="panel" aria-live="polite">
+      <h2>Celo x402 Index</h2>
+      <p class="sub">measured, not claimed</p>
+      <div class="row"><span>x402 settlements</span><b data-k="settlementsIndexed">–</b></div>
+      <div class="row"><span>agents read on chain</span><b data-k="agentsChecked">–</b></div>
+      <div class="row"><span>with any feedback</span><b data-k="agentsWithFeedback">–</b></div>
+      <div class="row"><span>feedback from 5+ clients</span><b data-k="agentsFiveOrMoreClients">–</b></div>
+      <p class="sub" id="asof"></p>
+    </div>
+  </div>
+  <p class="note" id="finding"></p>
+
   <h2>Live from the index</h2>
   <div class="stats" id="stats" aria-live="polite">
     <div class="stat"><b data-k="settlementsIndexed">–</b><span>x402 settlements indexed</span></div>
@@ -52,6 +81,7 @@
     <div class="stat"><b data-k="agentsDeclaringX402">–</b><span>declare x402 support</span></div>
     <div class="stat"><b data-k="endpointsPassing">–</b><span>endpoints pass the unpaid probe</span></div>
     <div class="stat"><b data-k="agentsLive">–</b><span>agents with a live endpoint</span></div>
+    <div class="stat"><b data-k="agentsOneClientOnly">–</b><span>agents whose feedback comes from one client</span></div>
   </div>
   <p class="note" id="stamp">Counts come from our own indexer (Celo RPC data via the SQD portal and public registration files). Updated every few minutes.</p>
 
@@ -92,6 +122,10 @@
       var v = s[el.getAttribute("data-k")];
       if (typeof v === "number") el.textContent = fmt.format(v);
     });
+    var asof = document.getElementById("asof");
+    if (asof && s.dataTo) asof.textContent = "as of " + new Date(s.dataTo * 1000).toISOString().slice(0, 10);
+    var f = document.getElementById("finding");
+    if (f && s.agentsWithFeedback && s.agentsFiveOrMoreClients != null) f.textContent = "Raw reputation is not trust: " + fmt.format(s.agentsWithFeedback) + " agents have feedback, but only " + fmt.format(s.agentsFiveOrMoreClients) + " of them from five or more different clients. Fresh wallets cost nothing, so the number of clients is a necessary sign of independence, not a proof.";
     if (s.dataTo) document.getElementById("stamp").textContent += " Data up to " + new Date(s.dataTo * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC.";
   }).catch(function () {});
 })();

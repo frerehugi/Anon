@@ -184,6 +184,8 @@ export async function buildApp(opts: { fetchImpl?: typeof fetch } = {}) {
         res.set("cache-control", "public, max-age=30, s-maxage=60").json({
           settlementsIndexed: h.settlements, dataFrom: h.dataFrom, dataTo: h.dataTo, cursorBlock: h.cursorBlock,
           agentsIndexed: d.agents, agentsDeclaringX402: d.declaredX402, endpointsProbed: d.endpointsProbed, endpointsPassing: d.endpointsPassing, agentsLive: d.agentsLive,
+          agentsChecked: d.chainChecked, agentsWithFeedback: d.reputation?.withEntries, agentsOneClientOnly: d.reputation?.byDistinctClients?.one,
+          agentsFiveOrMoreClients: d.reputation ? d.reputation.byDistinctClients.fiveToNineteen + d.reputation.byDistinctClients.twentyOrMore : undefined,
         });
       } catch {
         res.status(502).json({ error: "stats unavailable" });
