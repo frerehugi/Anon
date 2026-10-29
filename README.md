@@ -90,6 +90,43 @@ Private keys are never stored in this repo or given to any agent. See `.env.exam
 - ERC-8021 attribution tag: `celo_2cc7b29e484b` (every Celo mainnet transaction carries it;
   x402 settlements are attributed via the `payTo` address instead)
 
+## On-chain evidence (Celo mainnet)
+
+Anon deploys no smart contract of its own; it uses the standard ERC-8004 registries, the stablecoin contracts and Celo's x402 facilitator.
+
+| What | Address |
+|---|---|
+| ERC-8004 Identity Registry | [`0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`](https://celoscan.io/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432) |
+| ERC-8004 Reputation Registry | [`0x8004BAa17C55a88189AE136b182e5fdA19dE9b63`](https://celoscan.io/address/0x8004BAa17C55a88189AE136b182e5fdA19dE9b63) |
+| Anon agent wallet (ERC-8004 agent #9973, tag `celo_2cc7b29e484b`) | [`0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea`](https://celoscan.io/address/0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea) · [8004scan](https://www.8004scan.io/agents/celo/9973) |
+| Anon revenue wallet (x402 `payTo`) | [`0xA137b7886F13B9903564B7B9236d12a7A7732E0f`](https://celoscan.io/address/0xA137b7886F13B9903564B7B9236d12a7A7732E0f) |
+| USDC / USD₮ / USA₮ | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` / `0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e` / `0xD2ab3C9A02DBBAB236BfEC45D1d755DF4267F771` |
+
+Sample transactions (all mainnet, all checked on chain; details in [`docs/hackathon.md`](docs/hackathon.md)):
+
+| What | Transaction |
+|---|---|
+| ERC-8004 registration (tagged) | [`0x3c0782…1b456`](https://celoscan.io/tx/0x3c0782579d2be0a01f742969a9686dee155d286b487c4aee51961fb927e1b456) |
+| Card update 1 (tagged) | [`0x77f385…9723d`](https://celoscan.io/tx/0x77f3852b627042c05dfd52c0ea760c0a336c22d98c95ee0c2c6156075ba9723d) |
+| Card update: paid routes listed, `x402Support` true (tagged) | [`0xc21bee…c15a8f`](https://celoscan.io/tx/0xc21bee39fbe735d37dac81f8a58b740abf9186af1b5f9c3732cebb69d3c15a8f) |
+| Card update: own domain (tagged) | [`0xaa3a5a…c3fa`](https://celoscan.io/tx/0xaa3a5a9b5ebabb27697c9759e8b8fabd89cabfeadd59805bfb9612242f98c3fa) |
+| First paid call through buy: 0.01 USDC for a Celo JSON-RPC call | [`0x47e009…5f7e`](https://celoscan.io/tx/0x47e009c6ea5947a68514ec3673909979d006d8e9efc51a49ac0d0a3b8c605f7e) |
+| Settlement audit through buy: 0.01 USDC, 100 of 100 sampled settlements matched | [`0x215743…809f`](https://celoscan.io/tx/0x2157437da0879bbb00a55055d3f0598340c13f937d94dc7283f45a4a855c809f) |
+| Self-test on Anon's own API: 0.03 USDC (own traffic, not customer demand) | [`0x220f93…0a91`](https://celoscan.io/tx/0x220f93fc4fe29fb8325c3e8e81b8f31dfc209a4e1519803bfd94bc9340450a91) |
+
+x402 settlements are submitted and paid by the Celo facilitator (the transaction sender is its signer), so for them the attribution is the `payTo` address.
+
+## How to reproduce
+
+```sh
+npm install && npm test                       # offline tests, no keys needed
+npm run cli -- check 9903                     # read-only agent check on Celo mainnet
+npm run cli -- lint https://anon.sterntalerapp.xyz/v1/check?agentId=9903
+curl -i https://anon.sterntalerapp.xyz/v1/index/agents    # 402 with the price and accepted tokens
+curl https://anon.sterntalerapp.xyz/stats                 # live counts from the indexer
+```
+Everything that signs a payment needs the wallet key and runs only in the executor (`executor/README.md`); the tests use throwaway keys.
+
 ## Hackathon disclosure
 
 - All code in this repository was written during the hackathon (from 2026-10-15), by a human owner working with an AI coding agent
