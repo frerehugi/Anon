@@ -10,7 +10,8 @@
     "test": "node --import tsx --test test/*.test.ts",
     "cli": "tsx src/cli.ts",
     "start": "tsx src/server.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "pay-anon": "tsx scripts/pay-anon.ts"
   },
   "engines": {
     "node": ">=20"
