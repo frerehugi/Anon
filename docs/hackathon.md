@@ -54,3 +54,8 @@ Winners announced 2026-11-13.
   Settled. Tx `0xc664dc3373e1108ac7998f8ee46dd058fa10d21eb8b28523169e39b07541c609`, block 81401591, status success. Checked on chain: USDC `Transfer`
   of 0.05 from `0x205A…C90f` to the Anon revenue wallet `0xA137…2E0f`; submitted by the Celo facilitator signer `0x0d74…fb48`. This proves the
   full paid flow for a payer that is not the Anon wallet. The payer belongs to the same owner, so it is not independent demand and is not reported as such.
+  The other three routes were paid the same way minutes later, all settled and checked on chain (USDC `Transfer` of the exact price from `0x205A…C90f` to `0xA137…2E0f`, status success):
+  `/v1/index/agents` 0.02, tx `0xd05a51cccc7aed4345a2b949a7038a9862fb81c002294044efb7def8bec33726`, block 81401751;
+  `/v1/lint` 0.03, tx `0xab5f7c10c53afe4d5b827da958e685ffa6e32f143a2f998cb1b0176b583a5c3e`, block 81401796;
+  `/v1/index/report` 0.10, tx `0xc3edba668321fb7f7a1d287467c2314b2a7f983bbd31dc91fea4e81dff6f6faf`, block 81401823.
+  All four paid routes are therefore proven with a real settlement; total 0.20 USDC, still owner traffic.
