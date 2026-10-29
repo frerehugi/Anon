@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-29T16:59:50.142Z",
+  "source": "Chainstack Celo RPC, paid through buy (x402)",
+  "scope": "x402",
+  "agentsChecked": 95,
+  "stored": 95,
+  "withReputation": 23,
+  "unreadable": 0,
+  "rpcErrors": 0,
+  "payments": [
+    {
+      "requestId": "enrich-20261029165950-a1",
+      "txHash": "0x3c20da7681276352c3a9bffb681109325dc1c028cf0d2e5c4e1d1baf1731b5e0"
+    },
+    {
+      "requestId": "enrich-20261029165950-b1-1",
+      "txHash": "0x1b1bacf41cbe2552339275ce4027725d996310c5e9cd092b597e52ecfe6ba65c"
+    }
+  ]
+}
