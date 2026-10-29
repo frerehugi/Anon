@@ -49,3 +49,8 @@ Winners announced 2026-11-13.
   Payment tx `0x2157437da0879bbb00a55055d3f0598340c13f937d94dc7283f45a4a855c809f`, block 81042498, status success; checked on chain: USDC `Transfer` from the
   agent wallet to the buy gateway `payTo`, 0.01. Why it is not spam: the call has a purpose (an independent check of our own data), it is bounded by the
   policy (allowlist, approval `audit`, 0.20 cap), and the result goes into the audit report. Sample size 100 of about 34,000 indexed settlements.
+- **2026-10-29, first payment to Anon's API from a second wallet (owner test, not independent demand):** the owner called `GET /v1/check?agentId=9973`
+  on the production deployment with another wallet (`0x205A…C90f`) through `scripts/pay-anon.ts` (price cap 0.05, confirmation before signing).
+  Settled. Tx `0xc664dc3373e1108ac7998f8ee46dd058fa10d21eb8b28523169e39b07541c609`, block 81401591, status success. Checked on chain: USDC `Transfer`
+  of 0.05 from `0x205A…C90f` to the Anon revenue wallet `0xA137…2E0f`; submitted by the Celo facilitator signer `0x0d74…fb48`. This proves the
+  full paid flow for a payer that is not the Anon wallet. The payer belongs to the same owner, so it is not independent demand and is not reported as such.
