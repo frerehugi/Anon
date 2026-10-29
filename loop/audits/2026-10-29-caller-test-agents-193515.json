@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-29T19:35:15.207Z",
+  "route": "agents",
+  "url": "https://anon.sterntalerapp.xyz/v1/index/agents?x402=1&live=1&limit=5",
+  "payer": "0x205A92b7d69e2A0628cE928c4E3d3aC29D67C90f",
+  "status": "settled",
+  "txHash": "0xd05a51cccc7aed4345a2b949a7038a9862fb81c002294044efb7def8bec33726",
+  "detail": "paid 20000 atomic USDC",
+  "maxUsdc": "0.02",
+  "note": "Test by the owner of Anon with a second wallet. It is not independent demand and must not be reported as such.",
+  "responsePreview": "{\"total\":14,\"items\":[{\"agentId\":9978,\"owner\":\"0xa92fa55fa1a1e70334b6351bc6457bea6c8aeda2\",\"ownerAgents\":1,\"name\":\"Vigía\",\"description\":\"Vigía (Celo): automatic pre-send check API for Celo payments (POST /api/check, x402 per check), plus a MiniPay deep link (/pay?link=…) that checks a payment link before showing Pay.\",\"tags\":[\"payments\",\"developer\",\"x402\"],\"x402Support\":true,\"active\":true,\"registrationCoherent\":true,\"registrationStatus\":\"ok\",\"registrationError\":null,\"registeredAt\":1792423919,\"services\":[{\"name\":\"web\",\"endpoint\":\"https://vigia-celo.netlify.app\"},{\"name\":\"x402\",\"endpoint\":\"https://vigia-celo.netlify.app/api/check\"},{\"name\":\"source\",\"endpoint\":\"https://github.com/Simonethg/lofirmo\"}],\"x402Status\":\"live\",\"endpoints\":[{\"url\":\"https://vigia-celo.netlify.app\",\"declaredX402\":true,\"pass\":false,\"httpStatus\":200,\"errorCodes\":[\"NOT_402\"],\"payTo\":[],\"assets\":[],\"uptime\":0,\"probes\":4,\"lastProbeAt\":1793181164},{\"url\":\"https://vigia-celo.netlify.app/api/check\",\"declaredX402\":true,\"pass\":true,\"httpStatus\":402,\"errorCodes\":[],\"payTo\":[\"0xa92fa55fa1a1e70334b6351bc6457bea6c8aeda2\"],\"assets\":[\"USDC\"],\"uptime\":1,\"probes\":20,\"lastProbeAt\":1793301163},{\"url\":\"https://github.com/Simonethg/lofirmo\",\"declaredX402\":true,\"pass\":false,\"httpStatus\":200,\"errorCodes\":[\"NOT_402\"],\"payTo\":[],\"assets\":[],\"uptime\":0,\"probes\":4,\"lastProbeAt\":1793181164}],\"chain\":{\"checkedAt\":1793293216,\"checkedBlock\":81392441,\"ownerNow\":\"0xa92fa55fa1a1e70334b6351bc6457bea6c8aeda2\",\"ownerChanged\":false,\"agentWallet"
+}

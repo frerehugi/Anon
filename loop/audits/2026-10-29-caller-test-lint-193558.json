@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-29T19:35:58.265Z",
+  "route": "lint",
+  "url": "https://anon.sterntalerapp.xyz/v1/lint?url=https%3A%2F%2Fanon.sterntalerapp.xyz%2Fv1%2Fpricing",
+  "payer": "0x205A92b7d69e2A0628cE928c4E3d3aC29D67C90f",
+  "status": "settled",
+  "txHash": "0xab5f7c10c53afe4d5b827da958e685ffa6e32f143a2f998cb1b0176b583a5c3e",
+  "detail": "paid 30000 atomic USDC",
+  "maxUsdc": "0.03",
+  "note": "Test by the owner of Anon with a second wallet. It is not independent demand and must not be reported as such.",
+  "responsePreview": "{\"url\":\"https://anon.sterntalerapp.xyz/v1/pricing\",\"method\":\"GET\",\"status\":200,\"findings\":[{\"severity\":\"error\",\"code\":\"NOT_402\",\"message\":\"Unpaid request returned HTTP 200, expected 402 Payment Required.\",\"fix\":\"Put the x402 payment middleware before the route handler so unpaid requests get a 402 challenge.\"}],\"summary\":{\"errors\":1,\"warnings\":0,\"info\":0,\"pass\":false}}"
+}

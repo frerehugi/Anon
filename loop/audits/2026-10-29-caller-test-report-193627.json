@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-29T19:36:27.079Z",
+  "route": "report",
+  "url": "https://anon.sterntalerapp.xyz/v1/index/report?days=7",
+  "payer": "0x205A92b7d69e2A0628cE928c4E3d3aC29D67C90f",
+  "status": "settled",
+  "txHash": "0xc3edba668321fb7f7a1d287467c2314b2a7f983bbd31dc91fea4e81dff6f6faf",
+  "detail": "paid 100000 atomic USDC",
+  "maxUsdc": "0.10",
+  "note": "Test by the owner of Anon with a second wallet. It is not independent demand and must not be reported as such.",
+  "responsePreview": "{\"version\":\"0.1.0\",\"window\":{\"from\":1792696133,\"to\":1793300928,\"days\":7},\"totals\":{\"settlements\":32170,\"gmvUsd\":77605.3276,\"activePayers\":67,\"activePayTo\":24,\"avgTicketUsd\":2.412351,\"medianTicketUsd\":1.977099},\"byToken\":{\"USAT\":{\"settlements\":27937,\"gmvUsd\":68958.294874},\"USDT\":{\"settlements\":3520,\"gmvUsd\":8630.384531},\"USDC\":{\"settlements\":713,\"gmvUsd\":16.648158}},\"concentration\":{\"top5SettlementShare\":0.9736,\"top5GmvShare\":0.9993,\"hhiGmv\":1997},\"circuit\":{\"components\":3,\"addresses\":9,\"settlements\":31343,\"gmvUsd\":77550.7584,\"settlementShare\":0.9743,\"gmvShare\":0.9993},\"independent\":{\"settlements\":827,\"gmvUsd\":54.5692,\"activePayers\":59,\"activePayTo\":16,\"repeatPairShare\":0.6333},\"facilitators\":{\"0x0d74d5cefd2e7f24e623330ebe3d8d4cb45ffb48\":{\"settlements\":32167,\"share\":0.9999},\"0x402001b3fbf1462939657eb7f64ee3743eadf35e\":{\"settlements\":3,\"share\":0.0001}},\"gas\":{\"totalCelo\":560.9116,\"avgCeloPerSettlement\":0.017437},\"labels\":{\"buy gateway\":{\"settlements\":683,\"gmvUsd\":5.068874,\"avgTicketUsd\":0.007421,\"payers\":14}},\"daily\":[{\"day\":\"2026-10-22\",\"settlements\":893,\"gmvUsd\":3187.0484,\"activePayers\":11,\"activePayTo\":9,\"circuitShareGmv\":0.9999},{\"day\":\"2026-10-23\",\"settlements\":4441,\"gmvUsd\":15618.638,\"activePayers\":15,\"activePayTo\":9,\"circuitShareGmv\":0.9999},{\"day\":\"2026-10-24\",\"settlements\":4912,\"gmvUsd\":17482.6654,\"activePayers\":27,\"activePayTo\":12,\"circuitShareGmv\":0.9998},{\"day\":\"2026-10-25\",\"settlements\":4322,\"gmvUsd\":15851.5235,\"activePayers\":12,\"activePayTo\":8,\"circuitShareGmv\":1}"
+}

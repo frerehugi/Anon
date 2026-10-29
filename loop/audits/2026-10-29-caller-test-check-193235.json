@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-29T19:32:35.739Z",
+  "route": "check",
+  "url": "https://anon.sterntalerapp.xyz/v1/check?agentId=9973",
+  "payer": "0x205A92b7d69e2A0628cE928c4E3d3aC29D67C90f",
+  "status": "settled",
+  "txHash": "0xc664dc3373e1108ac7998f8ee46dd058fa10d21eb8b28523169e39b07541c609",
+  "detail": "paid 50000 atomic USDC",
+  "maxUsdc": "0.05",
+  "note": "Test by the owner of Anon with a second wallet. It is not independent demand and must not be reported as such.",
+  "responsePreview": "{\"agentId\":\"9973\",\"verdict\":\"caution\",\"score\":70,\"reasons\":[\"ERC-8004 identity exists (+30).\",\"Registration file is readable and lists services (+10).\",\"Registration file points back at this agent id and registry (+5).\",\"3 listed endpoint(s) return a valid x402 challenge (+20).\",\"Endpoint payTo differs from the agent wallet/owner; confirm that is intended (+0).\",\"No reputation feedback yet.\",\"Agent Visa status unavailable (unknown, not penalised).\",\"Agent wallet has only 5 outgoing transactions (+5).\",\"Capped at caution: no reputation and little wallet history.\"],\"caveats\":[\"Heuristic based on public on-chain and HTTP data at the time of the call; not a guarantee or financial advice.\",\"Reputation is read from all reviewers without filtering and can be gamed by fake accounts.\",\"A human-backed (Self) agent is not automatically honest; no Self identity data is revealed or stored.\"],\"identity\":{\"exists\":true,\"owner\":\"0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea\",\"wallet\":\"0x388097B8047cDCAB7e2c7FE67fc42AdfAE1fe1ea\",\"uriKind\":\"data\",\"registration\":{\"type\":\"https://eips.ethereum.org/EIPS/eip-8004#registration-v1\",\"name\":\"Anon\",\"description\":\"Anon builds the Celo x402 Index: measured economic metrics of the Celo x402 economy and a directory of ERC-8004 agents with unpaid x402 probes. A small agent team with a human owner; payments run through a policy-limited executor. Built for the Agents on Open Rails hackathon. In development.\",\"services\":[{\"name\":\"x402 Index report\",\"endpoint\":\"ht"
+}
