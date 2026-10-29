@@ -4,7 +4,7 @@ import type { Fetcher } from "../net.js";
 import type { PayRequest } from "../executor/engine.js";
 import type { Executor } from "../executor/executor.js";
 import { toAtomic } from "../executor/policy.js";
-import { AGENTS_PER_BATCH, SUMMARIES_PER_BATCH, MAX_CLIENTS_FOR_SUMMARY, chunk, parseStageA, parseStageB, stageA, stageB, toRows } from "./enrich.js";
+import { AGENTS_PER_BATCH, MAX_CLIENTS_FOR_SUMMARY, chunk, parseStageA, parseStageB, splitSummaries, stageA, stageB, toRows } from "./enrich.js";
 
 const URL_RPC = "https://gateway.usebuy.ai/chainstack/celo";
 
@@ -70,7 +70,7 @@ export async function runEnrich(ex: Executor, f: Fetcher, o: EnrichOpts): Promis
     rpcErrors += pa.rpcErrors;
     const need = [...pa.byAgent].filter(([, r]) => r.clients && r.clients.length > 0 && r.clients.length <= MAX_CLIENTS_FOR_SUMMARY).map(([agentId, r]) => ({ agentId, clients: r.clients! }));
     const summaries = new Map<number, { count: number; value: string; decimals: number }>();
-    for (const [j, part] of chunk(need, SUMMARIES_PER_BATCH).entries()) {
+    for (const [j, part] of splitSummaries(need).entries()) {
       const b = stageB(part);
       const rid = `enrich-${stamp}-b${k + 1}-${j + 1}`;
       const resB = await ex.execute(mk(rid, b.body), { dryRun: false });

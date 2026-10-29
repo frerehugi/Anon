@@ -17,6 +17,8 @@ export const AGENTS_PER_BATCH = 600;
 /** Summaries over huge client lists are skipped: the calldata grows with the list and the raw number says little there. */
 export const MAX_CLIENTS_FOR_SUMMARY = 500;
 export const SUMMARIES_PER_BATCH = 100;
+/** A summary call carries its client list as calldata (64 hex characters per address); batches are split to stay under this many characters. */
+export const MAX_BATCH_CHARS = 900_000;
 
 type Kind = "owner" | "wallet" | "clients" | "block" | "summary";
 export interface CallMeta { id: number; agentId: number; kind: Kind }
@@ -77,6 +79,21 @@ export function parseStageA(text: string, calls: CallMeta[]): { byAgent: Map<num
     if (c.kind === "clients") r.clients = decodeOrNull(() => (decodeFunctionResult({ abi: reputationAbi, functionName: "getClients", data: it.result as `0x${string}` }) as readonly string[]).map((a) => a.toLowerCase()));
   }
   return { byAgent, block, rpcErrors };
+}
+
+/** Splits agents into summary batches of at most SUMMARIES_PER_BATCH calls and MAX_BATCH_CHARS characters of request body. */
+export function splitSummaries<T extends { clients: string[] }>(items_: T[]): T[][] {
+  const out: T[][] = [];
+  let cur: T[] = [];
+  let chars = 0;
+  for (const it of items_) {
+    const size = 400 + 66 * it.clients.length;
+    if (cur.length > 0 && (cur.length >= SUMMARIES_PER_BATCH || chars + size > MAX_BATCH_CHARS)) { out.push(cur); cur = []; chars = 0; }
+    cur.push(it);
+    chars += size;
+  }
+  if (cur.length > 0) out.push(cur);
+  return out;
 }
 
 export function stageB(items_: { agentId: number; clients: string[] }[]): { body: string; calls: CallMeta[] } {

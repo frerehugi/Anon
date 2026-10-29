@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { encodeFunctionResult, parseAbi } from "viem";
-import { AGENTS_PER_BATCH, chunk, parseStageA, parseStageB, stageA, stageB, toRows } from "../src/buyjobs/enrich.js";
+import { AGENTS_PER_BATCH, MAX_BATCH_CHARS, chunk, parseStageA, parseStageB, splitSummaries, stageA, stageB, toRows } from "../src/buyjobs/enrich.js";
 import { chainStatements, parseChainRows } from "../src/directory/chain.js";
 
 const identityAbi = parseAbi(["function ownerOf(uint256) view returns (address)", "function getAgentWallet(uint256) view returns (address)"]);
@@ -53,6 +53,19 @@ test("stage B and the final rows", () => {
   assert.equal(by.get(9)?.repValue, "0");
   assert.equal(by.get(11)?.repClients, null); // could not be read
   assert.equal(by.get(11)?.repCount, null);
+});
+
+test("a full stage A batch fits the executor body cap, and summary batches are split by size", async () => {
+  const { MAX_REQUEST_BODY } = await import("../src/executor/engine.js");
+  const ids = Array.from({ length: AGENTS_PER_BATCH }, (_, i) => 9000 + i);
+  assert.ok(stageA(ids).body.length < MAX_REQUEST_BODY);
+  const many = Array.from({ length: 300 }, () => "0x" + "e".repeat(40));
+  const items = Array.from({ length: 60 }, (_, i) => ({ agentId: i, clients: many }));
+  const parts = splitSummaries(items);
+  assert.ok(parts.length > 1);
+  assert.equal(parts.flat().length, 60);
+  for (const part of parts) assert.ok(stageB(part).body.length <= MAX_BATCH_CHARS && stageB(part).body.length < MAX_REQUEST_BODY);
+  assert.equal(splitSummaries(Array.from({ length: 250 }, (_, i) => ({ agentId: i, clients: [C1] }))).length, 3); // 100 calls at most per batch
 });
 
 test("chunk", () => assert.deepEqual(chunk([1, 2, 3, 4, 5], 2), [[1, 2], [3, 4], [5]]));
