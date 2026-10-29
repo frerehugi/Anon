@@ -60,7 +60,7 @@ export async function runEnrich(ex: Executor, f: Fetcher, o: EnrichOpts): Promis
   if (!o.writeToken) throw new Error("INDEX_WRITE_TOKEN is required in the environment for --live");
 
   const payments: { requestId: string; txHash?: string }[] = [];
-  let stored = 0, rpcErrors = 0, withReputation = 0, ownerChanged = 0, unreadable = 0;
+  let stored = 0, rpcErrors = 0, withReputation = 0, unreadable = 0;
   for (const [k, ids_] of chunks.entries()) {
     const a = stageA(ids_);
     const resA = await ex.execute(mk(`enrich-${stamp}-a${k + 1}`, a.body), { dryRun: false });
@@ -94,5 +94,5 @@ export async function runEnrich(ex: Executor, f: Fetcher, o: EnrichOpts): Promis
   mkdirSync(dir, { recursive: true });
   const file = `${dir}/${start.toISOString().slice(0, 10)}-directory-enrichment-${stamp.slice(-6)}.json`;
   writeFileSync(file, JSON.stringify(report, null, 2) + "\n");
-  return { ...report, paymentsCount: payments.length, payments: undefined, file, ownerChanged };
+  return { ...report, paymentsCount: payments.length, payments: undefined, file };
 }
