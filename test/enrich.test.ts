@@ -90,7 +90,7 @@ import { join } from "node:path";
 import type { Executor } from "../src/executor/executor.js";
 import type { Fetcher } from "../src/net.js";
 
-function fakeSetup(opts: { deny?: boolean } = {}) {
+function fakeSetup(opts: { deny?: boolean; failB?: boolean } = {}) {
   const requests: { id: string; body: string }[] = [];
   const ingested: any[] = [];
   const ex = {
@@ -98,6 +98,7 @@ function fakeSetup(opts: { deny?: boolean } = {}) {
     execute: async (req: any) => {
       requests.push({ id: req.id, body: req.body });
       if (opts.deny) return { decision: { allow: false, reasons: ["nope"] }, status: "denied" };
+      if (opts.failB && req.id.includes("-b")) return { decision: { allow: true, reasons: [] }, status: "uncertain", detail: "timeout" };
       const arr = JSON.parse(req.body);
       let results: object[];
       if (arr[0].params[0].data.startsWith("0x6352211e")) { // stage A: ownerOf first
@@ -156,4 +157,14 @@ test("enrich: a refused payment stops the job, and a missing write token is an e
   assert.equal(out.stored, 0);
   assert.equal(s.ingested.length, 0);
   await assert.rejects(runEnrich(fakeSetup().ex, fakeSetup().f, { ...base, live: true }), /INDEX_WRITE_TOKEN/);
+});
+
+test("enrich: when a summary batch is uncertain, the agents that are complete are still stored and the others stay stale", async () => {
+  const s = fakeSetup({ failB: true });
+  const out: any = await runEnrich(s.ex, s.f, { ...base, live: true, writeToken: "w" });
+  assert.equal(out.status, "uncertain");
+  assert.equal(out.stoppedAt, "b1-1");
+  assert.equal(s.ingested.length, 1);
+  assert.deepEqual(s.ingested[0].body.rows.map((r: any) => r.agentId), [12]); // agent 11 waits for its summary, agent 12 has no clients
+  assert.equal(out.savedBeforeStop, 1);
 });

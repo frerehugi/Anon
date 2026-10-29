@@ -61,6 +61,14 @@ export async function runEnrich(ex: Executor, f: Fetcher, o: EnrichOpts): Promis
 
   const payments: { requestId: string; txHash?: string }[] = [];
   let stored = 0, rpcErrors = 0, withReputation = 0, unreadable = 0;
+  const save = async (rows: ReturnType<typeof toRows>): Promise<{ httpStatus: number; detail: string } | null> => {
+    for (const part of chunk(rows, 500)) {
+      const r = await f(`${o.indexUrl}/v1/ingest/agent-chain`, { method: "POST", headers: { ...hdr(o.writeToken!), "content-type": "application/json" }, body: JSON.stringify({ rows: part }), timeoutMs: 20_000 });
+      if (r.status !== 200) return { httpStatus: r.status, detail: r.body.slice(0, 200) };
+      stored += part.length;
+    }
+    return null;
+  };
   for (const [k, ids_] of chunks.entries()) {
     const a = stageA(ids_);
     const resA = await ex.execute(mk(`enrich-${stamp}-a${k + 1}`, a.body), { dryRun: false });
@@ -74,7 +82,13 @@ export async function runEnrich(ex: Executor, f: Fetcher, o: EnrichOpts): Promis
       const b = stageB(part);
       const rid = `enrich-${stamp}-b${k + 1}-${j + 1}`;
       const resB = await ex.execute(mk(rid, b.body), { dryRun: false });
-      if (resB.status !== "settled") return { plan, stoppedAt: `b${k + 1}-${j + 1}`, status: resB.status, decision: resB.decision, detail: resB.detail, stored, payments };
+      if (resB.status !== "settled") {
+        // what was paid for stays: keep the agents that are complete so far; the others stay stale and are read again by the next run
+        const waiting = new Set(need.filter((n) => !summaries.has(n.agentId)).map((n) => n.agentId));
+        const partial = toRows(pa.byAgent, summaries, pa.block).filter((r) => !waiting.has(r.agentId));
+        const failure = await save(partial);
+        return { plan, stoppedAt: `b${k + 1}-${j + 1}`, status: resB.status, decision: resB.decision, detail: resB.detail, stored, savedBeforeStop: failure ? 0 : partial.length, payments };
+      }
       payments.push({ requestId: rid, txHash: resB.txHash });
       const pb = parseStageB(resB.body ?? "", b.calls);
       rpcErrors += pb.rpcErrors;
@@ -83,11 +97,8 @@ export async function runEnrich(ex: Executor, f: Fetcher, o: EnrichOpts): Promis
     const rows = toRows(pa.byAgent, summaries, pa.block);
     unreadable += rows.filter((r) => r.ownerNow === null && r.repClients === null).length;
     withReputation += rows.filter((r) => (r.repCount ?? 0) > 0).length;
-    for (const part of chunk(rows, 500)) {
-      const r = await f(`${o.indexUrl}/v1/ingest/agent-chain`, { method: "POST", headers: { ...hdr(o.writeToken), "content-type": "application/json" }, body: JSON.stringify({ rows: part }), timeoutMs: 20_000 });
-      if (r.status !== 200) return { plan, stoppedAt: `ingest ${k + 1}`, status: "ingest_failed", httpStatus: r.status, detail: r.body.slice(0, 200), stored, payments };
-      stored += part.length;
-    }
+    const failure = await save(rows);
+    if (failure) return { plan, stoppedAt: `ingest ${k + 1}`, status: "ingest_failed", httpStatus: failure.httpStatus, detail: failure.detail, stored, payments };
   }
   const report = { date: start.toISOString(), source: "Chainstack Celo RPC, paid through buy (x402)", scope: o.scope, agentsChecked: ids.length, stored, withReputation, unreadable, rpcErrors, payments };
   const dir = o.reportDir ?? "loop/audits";

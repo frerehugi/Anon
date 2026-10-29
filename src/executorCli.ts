@@ -38,7 +38,7 @@ export async function executorCommand(sub: string | undefined, args: string[]): 
     if (!key || !/^0x[0-9a-fA-F]{64}$/.test(key)) throw new Error("AGENT_PRIVATE_KEY (0x + 64 hex) is required in the environment for --live");
     const account = privateKeyToAccount(key as `0x${string}`);
     if (account.address.toLowerCase() !== ANON_AGENT_WALLET.toLowerCase()) throw new Error(`the key belongs to ${account.address}, not to the Anon wallet; refusing`);
-    signer = new X402Signer({ account, fetcher: nodeFetcher });
+    signer = new X402Signer({ account, fetcher: nodeFetcher, timeoutMs: 60_000 });
   }
   const ex = new Executor({
     policy, ledger, signer,
