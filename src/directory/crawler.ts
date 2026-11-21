@@ -6,7 +6,7 @@ import { assetInfo, REGISTRY_FIRST_BLOCK } from "../constants.js";
 import type { Fetcher } from "../net.js";
 import { mapLimit } from "../util.js";
 import type { RegistryWindow, RegistrySource } from "./registrySource.js";
-import { dueEndpoints, eventStatements, fetchedStatements, pendingFetches } from "./store.js";
+import { CONFIRM_FAILURES, dueEndpoints, eventStatements, fetchedStatements, pendingFetches } from "./store.js";
 
 export const REGISTRY_SOURCE_KEY = "registry-celo";
 const HOUR = 3600;
@@ -80,16 +80,22 @@ export async function processPending(db: Db, fetcher: Fetcher, opts: { max: numb
   return sum;
 }
 
-export interface ProbeSummary { probed: number; pass: number; fail: number }
+export interface ProbeSummary { probed: number; pass: number; fail: number; unconfirmed: number }
 
 const PASS_INTERVAL = 6 * HOUR;
+const RETRY_INTERVAL = 15 * 60;
 const MAX_FAIL_INTERVAL = 7 * 24 * HOUR;
 
-/** Probe endpoints that are due: one unpaid request each. Passing ones are re-checked every 6 h, failing ones back off up to 7 days. */
+/**
+ * Probe endpoints that are due: one unpaid request each. Passing ones are re-checked every 6 h.
+ * One failed probe is not published as a failure: the published verdict (`last_pass`) keeps its previous value
+ * (a passing endpoint stays passing, an endpoint that never passed stays unverified) and the endpoint is probed again after
+ * 15 minutes. Only CONFIRM_FAILURES failures in a row flip the verdict to failing; after that re-checks back off up to 7 days.
+ */
 export async function runProbes(db: Db, fetcher: Fetcher, opts: { max: number; concurrency?: number; now?: () => number }): Promise<ProbeSummary> {
   const now = opts.now ?? (() => Math.floor(Date.now() / 1000));
   const due = await dueEndpoints(db, now(), opts.max);
-  const sum: ProbeSummary = { probed: due.length, pass: 0, fail: 0 };
+  const sum: ProbeSummary = { probed: due.length, pass: 0, fail: 0, unconfirmed: 0 };
   const results = await mapLimit(due, opts.concurrency ?? 4, async (e) => ({ e, r: await lintEndpoint(e.url, { fetcher }) }));
   const stmts: Stmt[] = [];
   for (const { e, r } of results) {
@@ -99,12 +105,16 @@ export async function runProbes(db: Db, fetcher: Fetcher, opts: { max: number; c
     const assets = [...new Set(celo.map((a) => (a.asset ? assetInfo(a.asset)?.symbol ?? a.asset : undefined)).filter(Boolean))];
     const errors = r.findings.filter((f) => f.severity === "error").map((f) => f.code);
     const t = now();
-    const next = t + (pass ? PASS_INTERVAL : Math.min(MAX_FAIL_INTERVAL, PASS_INTERVAL * 2 ** (e.consecutive_failures + 1)));
+    const failures = pass ? 0 : e.consecutive_failures + 1;
+    const confirmed = failures >= CONFIRM_FAILURES;
+    // Published verdict: 1 pass, 0 confirmed failure, null unverified (never passed and not yet confirmed failing).
+    const verdict = pass ? 1 : confirmed ? 0 : e.probes_pass > 0 ? 1 : null;
+    const next = t + (pass ? PASS_INTERVAL : confirmed ? Math.min(MAX_FAIL_INTERVAL, PASS_INTERVAL * 2 ** (failures - 1)) : RETRY_INTERVAL);
     stmts.push({
       sql: "UPDATE endpoints SET last_probe_at=?, next_probe_at=?, last_status=?, last_pass=?, last_error_codes=?, pay_to=?, assets=?, probes_total=probes_total+1, probes_pass=probes_pass+?, consecutive_failures=? WHERE id=?",
-      params: [t, next, r.status ?? null, pass ? 1 : 0, JSON.stringify(errors), JSON.stringify(payTo), JSON.stringify(assets), pass ? 1 : 0, pass ? 0 : e.consecutive_failures + 1, e.id],
+      params: [t, next, r.status ?? null, verdict, JSON.stringify(errors), JSON.stringify(payTo), JSON.stringify(assets), pass ? 1 : 0, failures, e.id],
     });
-    if (pass) sum.pass++; else sum.fail++;
+    if (pass) sum.pass++; else { sum.fail++; if (!confirmed) sum.unconfirmed++; }
   }
   await db.batch(stmts);
   return sum;

@@ -7,6 +7,18 @@ import { nodeFetcher } from "./safeFetch.js";
 
 export type Verdict = "ok" | "caution" | "avoid";
 
+/** One unpaid probe; a failed one is repeated once after a short pause, and only two misses in a row count as a failure (same rule as the directory crawler). */
+export async function probeWithRetry(
+  url: string,
+  deps: { lint?: (u: string) => Promise<LintResult>; pauseMs?: number } = {},
+): Promise<LintResult> {
+  const lint = deps.lint ?? ((u: string) => lintEndpoint(u, { fetcher: nodeFetcher }));
+  const first = await lint(url);
+  if (first.status === 402 && first.summary.pass) return first;
+  await new Promise((r) => setTimeout(r, deps.pauseMs ?? 1500));
+  return lint(url);
+}
+
 export interface Reputation {
   clients: number;
   count: number;
@@ -75,7 +87,7 @@ export async function checkAgent(agentId: bigint): Promise<CheckResult> {
     readReputation(agentId),
     readVisa(agentId),
     identity.wallet ? publicClient.getTransactionCount({ address: identity.wallet as `0x${string}` }).catch(() => undefined) : Promise.resolve(undefined),
-    Promise.all(endpoints.map((u) => lintEndpoint(u, { fetcher: nodeFetcher }))),
+    Promise.all(endpoints.map((u) => probeWithRetry(u))),
   ]);
 
   let score = 30; // identity exists

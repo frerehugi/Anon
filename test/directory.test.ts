@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { SqliteDb } from "../src/indexer/sqliteDb.js";
 import { decodeAbiString, parseRegistryLines, REGISTERED_TOPIC, URI_UPDATED_TOPIC, type AgentEvent } from "../src/directory/events.js";
@@ -38,6 +39,7 @@ const fakeFetcher = (routes: Record<string, { status: number; body: string; head
   return { status: r.status, body: r.body, headers: new Headers(r.headers ?? {}) };
 };
 
+const require_migration = () => readFileSync("migrations/0004_probe_confirmation.sql", "utf8");
 function freshDb() { const db = new SqliteDb(); db.migrate(); return db; }
 
 test("decodeAbiString decodes and rejects malformed data", () => {
@@ -115,13 +117,101 @@ test("runProbes records pass/fail and schedules re-checks", async () => {
   const sum = await runProbes(db, f, { max: 10, now: () => now });
   assert.equal(sum.probed, 2);
   assert.equal(sum.pass, 1);
+  assert.equal(sum.unconfirmed, 1); // one miss is not published as a failure
   const good = await getAgent(db, 1);
   assert.equal(good?.x402Status, "live");
   assert.deepEqual(good?.endpoints[0].payTo, ["0x" + "9".repeat(40)]);
   assert.deepEqual(good?.endpoints[0].assets, ["USDC"]);
-  assert.equal((await getAgent(db, 2))?.x402Status, "declared_failing");
+  const bad1 = await getAgent(db, 2);
+  assert.equal(bad1?.x402Status, "declared_unverified");
+  assert.equal(bad1?.endpoints[0].pass, null);
+  assert.equal(bad1?.endpoints[0].unconfirmedFailure, true);
+  assert.equal(bad1?.endpoints[0].httpStatus, 200); // the raw fact of the latest probe stays visible
   assert.equal((await runProbes(db, f, { max: 10, now: () => now + 60 })).probed, 0);
-  assert.equal((await runProbes(db, f, { max: 10, now: () => now + 7 * 3600 })).probed, 1); // only the passing one is due
+  const second = await runProbes(db, f, { max: 10, now: () => now + 16 * 60 }); // the re-check comes after 15 minutes
+  assert.equal(second.probed, 1);
+  assert.equal(second.unconfirmed, 0);
+  const bad2 = await getAgent(db, 2);
+  assert.equal(bad2?.x402Status, "declared_failing"); // two misses in a row
+  assert.equal(bad2?.endpoints[0].pass, false);
+  assert.equal(bad2?.endpoints[0].unconfirmedFailure, false);
+  assert.equal((await runProbes(db, f, { max: 10, now: () => now + 16 * 60 + 7 * 3600 })).probed, 1); // only the passing one is due again
+  db.close();
+});
+
+test("a single failed probe does not flip a passing endpoint; two in a row do; a pass recovers it", async () => {
+  const db = freshDb();
+  await db.batch(eventStatements(ev("registered", 1, dataUri(regFile())), 1000));
+  const routes: Record<string, { status: number; body: string; headers?: Record<string, string> } | Error> = {
+    "https://demo.example/paid": { status: 402, body: paid402, headers: { "content-type": "application/json" } },
+  };
+  const f = fakeFetcher(routes);
+  let now = 2_000_000;
+  await runProbes(db, f, { max: 10, now: () => now });
+  assert.equal((await getAgent(db, 1))?.x402Status, "live");
+
+  routes["https://demo.example/paid"] = new Error("timeout");
+  now += 6 * 3600 + 1;
+  const miss1 = await runProbes(db, f, { max: 10, now: () => now });
+  assert.equal(miss1.unconfirmed, 1);
+  const a1 = await getAgent(db, 1);
+  assert.equal(a1?.x402Status, "live"); // still listed as live while the second probe is pending
+  assert.equal(a1?.endpoints[0].pass, true);
+  assert.equal(a1?.endpoints[0].unconfirmedFailure, true);
+  assert.equal(a1?.endpoints[0].consecutiveFailures, 1);
+
+  now += 16 * 60;
+  assert.equal((await runProbes(db, f, { max: 10, now: () => now })).unconfirmed, 0);
+  const a2 = await getAgent(db, 1);
+  assert.equal(a2?.x402Status, "declared_failing");
+  assert.equal(a2?.endpoints[0].pass, false);
+  assert.equal((await listAgents(db, { live: true })).total, 0);
+
+  routes["https://demo.example/paid"] = { status: 402, body: paid402, headers: { "content-type": "application/json" } };
+  now += 12 * 3600 + 1; // confirmed failures back off: 12 h after the second miss
+  await runProbes(db, f, { max: 10, now: () => now });
+  const a3 = await getAgent(db, 1);
+  assert.equal(a3?.x402Status, "live");
+  assert.equal(a3?.endpoints[0].consecutiveFailures, 0);
+  db.close();
+});
+
+test("a first miss on an endpoint that never passed stays unverified, not failing", async () => {
+  const db = freshDb();
+  await db.batch(eventStatements(ev("registered", 1, dataUri(regFile())), 1000));
+  const f = fakeFetcher({ "https://demo.example/paid": new Error("down") });
+  await runProbes(db, f, { max: 10, now: () => 3_000_000 });
+  const a = await getAgent(db, 1);
+  assert.equal(a?.x402Status, "declared_unverified");
+  assert.equal(a?.endpoints[0].pass, null);
+  const st = await directoryStats(db);
+  assert.equal(st.endpointsProbed, 1);
+  assert.equal(st.endpointsPassing, 0);
+  db.close();
+});
+
+test("migration 0004 recomputes verdicts of rows probed under the old one-miss rule", () => {
+  const db = new SqliteDb();
+  db.migrate();
+  const raw = (db as unknown as { raw: { exec(s: string): void; prepare(s: string): { all(): unknown[] } } }).raw;
+  raw.exec(`INSERT INTO agents (agent_id, owner, reg_status, first_seen_at, updated_at) VALUES (1, '0x1', 'ok', 1, 1)`);
+  const row = (url: string, total: number, pass: number, fails: number, last: number | null) =>
+    raw.exec(`INSERT INTO endpoints (agent_id, url, probes_total, probes_pass, consecutive_failures, last_pass, next_probe_at) VALUES (1, '${url}', ${total}, ${pass}, ${fails}, ${last === null ? "NULL" : last}, 999)`);
+  row("https://a.example", 4, 4, 0, 1); // passing
+  row("https://b.example", 4, 3, 1, 0);  // one miss after passes: was published failing
+  row("https://c.example", 1, 0, 1, 0);  // one miss, never passed
+  row("https://d.example", 5, 2, 3, 0);  // confirmed failing
+  row("https://e.example", 0, 0, 0, null); // never probed
+  raw.exec(require_migration());
+  const by = Object.fromEntries((raw.prepare("SELECT url, last_pass, next_probe_at FROM endpoints").all() as { url: string; last_pass: number | null; next_probe_at: number }[]).map((r) => [r.url.slice(8, 9), r]));
+  assert.equal(by.a.last_pass, 1);
+  assert.equal(by.b.last_pass, 1);
+  assert.equal(by.c.last_pass, null);
+  assert.equal(by.d.last_pass, 0);
+  assert.equal(by.e.last_pass, null);
+  assert.equal(by.b.next_probe_at, 0); // due at the next cycle
+  assert.equal(by.c.next_probe_at, 0);
+  assert.equal(by.d.next_probe_at, 999);
   db.close();
 });
 

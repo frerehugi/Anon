@@ -1,4 +1,5 @@
 import type { Db } from "../indexer/db.js";
+import { CONFIRM_FAILURES } from "./store.js";
 
 export type X402Status = "live" | "declared_failing" | "declared_unverified" | "declared_no_endpoint" | "none" | "inactive" | "unreadable";
 
@@ -13,6 +14,9 @@ export interface EndpointEntry {
   uptime: number | null; // share of probes that passed
   probes: number;
   lastProbeAt: number | null;
+  /** The latest probe failed but the failure is not confirmed yet (a second probe is scheduled); `pass` still shows the previous verdict. */
+  unconfirmedFailure: boolean;
+  consecutiveFailures: number;
 }
 
 export interface DirectoryEntry {
@@ -50,7 +54,7 @@ interface AgentRow {
 }
 interface EndpointRow {
   agent_id: number; url: string; declared_x402: number; last_pass: number | null; last_status: number | null; last_error_codes: string | null;
-  pay_to: string | null; assets: string | null; probes_total: number; probes_pass: number; last_probe_at: number | null;
+  pay_to: string | null; assets: string | null; probes_total: number; probes_pass: number; last_probe_at: number | null; consecutive_failures: number;
 }
 
 const arr = <T>(s: string | null): T[] => { if (!s) return []; try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch { return []; } };
@@ -61,8 +65,9 @@ export function x402StatusOf(a: Pick<AgentRow, "reg_status" | "x402_support" | "
   if (a.active === 0) return "inactive";
   if (eps.length === 0) return a.x402_support === 1 ? "declared_no_endpoint" : "none";
   if (eps.some((e) => e.pass === true)) return "live";
-  if (eps.every((e) => e.probes === 0)) return "declared_unverified";
-  return "declared_failing";
+  // `pass === false` means a confirmed failure (CONFIRM_FAILURES probes in a row); a single miss stays unverified.
+  if (eps.some((e) => e.pass === false)) return "declared_failing";
+  return "declared_unverified";
 }
 
 function toEntry(a: AgentRow, eps: EndpointRow[]): DirectoryEntry {
@@ -70,6 +75,7 @@ function toEntry(a: AgentRow, eps: EndpointRow[]): DirectoryEntry {
     url: e.url, declaredX402: e.declared_x402 === 1, pass: e.last_pass === null ? null : e.last_pass === 1, httpStatus: e.last_status,
     errorCodes: arr<string>(e.last_error_codes), payTo: arr<string>(e.pay_to), assets: arr<string>(e.assets),
     uptime: e.probes_total ? Math.round((e.probes_pass / e.probes_total) * 100) / 100 : null, probes: e.probes_total, lastProbeAt: e.last_probe_at,
+    unconfirmedFailure: e.consecutive_failures > 0 && e.consecutive_failures < CONFIRM_FAILURES, consecutiveFailures: e.consecutive_failures,
   }));
   return {
     agentId: a.agent_id, owner: a.owner, ownerAgents: a.owner_agents, name: a.name, description: a.description, tags: arr<string>(a.tags_json),
@@ -118,7 +124,7 @@ export async function listAgents(db: Db, f: AgentFilters = {}): Promise<{ total:
   const rows = await db.all<AgentRow>(`${BASE_SELECT}${w} ORDER BY ${order} LIMIT ? OFFSET ?`, [...params, limit, Math.max(0, f.offset ?? 0)]);
   if (rows.length === 0) return { total, items: [] };
   const ids = rows.map((r) => r.agent_id);
-  const eps = await db.all<EndpointRow>(`SELECT agent_id, url, declared_x402, last_pass, last_status, last_error_codes, pay_to, assets, probes_total, probes_pass, last_probe_at FROM endpoints WHERE agent_id IN (${ids.map(() => "?").join(",")}) ORDER BY id`, ids);
+  const eps = await db.all<EndpointRow>(`SELECT agent_id, url, declared_x402, last_pass, last_status, last_error_codes, pay_to, assets, probes_total, probes_pass, last_probe_at, consecutive_failures FROM endpoints WHERE agent_id IN (${ids.map(() => "?").join(",")}) ORDER BY id`, ids);
   const byAgent = new Map<number, EndpointRow[]>();
   for (const e of eps) (byAgent.get(e.agent_id) ?? byAgent.set(e.agent_id, []).get(e.agent_id)!).push(e);
   return { total, items: rows.map((r) => toEntry(r, byAgent.get(r.agent_id) ?? [])) };
@@ -127,7 +133,7 @@ export async function listAgents(db: Db, f: AgentFilters = {}): Promise<{ total:
 export async function getAgent(db: Db, agentId: number): Promise<DirectoryEntry | null> {
   const rows = await db.all<AgentRow>(`${BASE_SELECT} WHERE a.agent_id = ?`, [agentId]);
   if (!rows.length) return null;
-  const eps = await db.all<EndpointRow>("SELECT agent_id, url, declared_x402, last_pass, last_status, last_error_codes, pay_to, assets, probes_total, probes_pass, last_probe_at FROM endpoints WHERE agent_id = ? ORDER BY id", [agentId]);
+  const eps = await db.all<EndpointRow>("SELECT agent_id, url, declared_x402, last_pass, last_status, last_error_codes, pay_to, assets, probes_total, probes_pass, last_probe_at, consecutive_failures FROM endpoints WHERE agent_id = ? ORDER BY id", [agentId]);
   return toEntry(rows[0], eps);
 }
 

@@ -93,9 +93,12 @@ export const pendingFetches = (db: Db, now: number, limit: number) =>
     [now, limit],
   );
 
-export interface DueEndpoint { id: number; agent_id: number; url: string; consecutive_failures: number }
+/** A failing endpoint is published as failing only after this many unpaid probes in a row failed; one miss is treated as unconfirmed. */
+export const CONFIRM_FAILURES = 2;
+
+export interface DueEndpoint { id: number; agent_id: number; url: string; consecutive_failures: number; probes_pass: number }
 export const dueEndpoints = (db: Db, now: number, limit: number) =>
   db.all<DueEndpoint>(
-    "SELECT id, agent_id, url, consecutive_failures FROM endpoints WHERE next_probe_at IS NULL OR next_probe_at <= ? ORDER BY COALESCE(next_probe_at, 0), id LIMIT ?",
+    "SELECT id, agent_id, url, consecutive_failures, probes_pass FROM endpoints WHERE next_probe_at IS NULL OR next_probe_at <= ? ORDER BY COALESCE(next_probe_at, 0), id LIMIT ?",
     [now, limit],
   );
