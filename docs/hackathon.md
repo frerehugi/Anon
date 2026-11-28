@@ -59,3 +59,9 @@ Winners announced 2026-11-13.
   `/v1/lint` 0.03, tx `0xab5f7c10c53afe4d5b827da958e685ffa6e32f143a2f998cb1b0176b583a5c3e`, block 81401796;
   `/v1/index/report` 0.10, tx `0xc3edba668321fb7f7a1d287467c2314b2a7f983bbd31dc91fea4e81dff6f6faf`, block 81401823.
   All four paid routes are therefore proven with a real settlement; total 0.20 USDC, still owner traffic.
+- **2026-10-30, first payment from an external wallet:** one USDT payment of 0.02 reached the Anon revenue wallet `0xA137…2E0f` from `0xa4690e6bb56d85ca7c48a72b37a650c6f7f438e1`.
+  Tx `0x12d56b1e7633bd7e58606ba33331be5e8711e5ab58dcc4854481bf722e713f85`, block 81447636 (2026-10-30 08:19:54 UTC), submitted by the Celo facilitator signer `0x0d74…fb48`
+  as a USDT `transferWithAuthorization`, i.e. an x402 settlement. 0.02 is the price of `GET /v1/index/agents` (the settlement does not show which route was called).
+  The owner confirmed on 2026-11-28 that this wallet is not his. It has 78 transactions on Celo and appears nowhere in our repo or records. Scan on 2026-11-28 of all incoming USDC, USDT and USAT
+  transfers to the revenue wallet from block 81,401,000 to 83,969,030: only this payment plus the four owner tests above. So there is **one** external paying request so far, 0.02 USD. The payer's
+  identity is unknown to us; "external" rests on the owner's statement and the absence of any link we can see.
